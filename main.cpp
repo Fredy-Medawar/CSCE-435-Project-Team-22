@@ -14,6 +14,7 @@
 
 const char* array_fill_name = "array_fill";
 const char* sort_check_name = "sort_check";
+const char* MPI_mergesort = "MPI_mergesort";
 
 using namespace std;
 
@@ -33,11 +34,11 @@ void parallel_array_fill(int NUM_VALS, float *values, int num_procs, int rank)
 
     float *local_values = (float *)malloc(local_size * sizeof(float));
 
-//    for (int i = 0; i < local_size; ++i) 
-//    {
-//        local_values[i] = (float)rand() / (float)RAND_MAX;
-//        printf("Check value for %d : %.6f\n",i, local_values[i]);
-//    }
+    for (int i = 0; i < local_size; ++i) 
+    {
+        local_values[i] = (float)rand() / (float)RAND_MAX;
+        //printf("Check value for %d : %.6f\n",i, local_values[i]);
+    }
 
     // Gather local portions into global array
     MPI_Gather(local_values, local_size, MPI_FLOAT, values, local_size, MPI_FLOAT, 0, MPI_COMM_WORLD);
@@ -57,65 +58,6 @@ bool sort_check(float *local_values, int local_size)
         }
     }
     return true;
-}
-
-void parallel_sort_check(int NUM_VALS, float *values, int num_procs, int rank)
-{
-    CALI_MARK_BEGIN(sort_check_name);
-
-    // Calculate local size based on rank and array size
-    int local_size = NUM_VALS / num_procs;
-    int start = rank * local_size;
-    int end = (rank == num_procs - 1) ? NUM_VALS : start + local_size;
-
-    local_size = end - start;
-
-    float* local_values = (float*)malloc(local_size * sizeof(float));
-
-    // Scatter the array among processes
-    MPI_Scatter(values, local_size, MPI_FLOAT, local_values, local_size, MPI_FLOAT, 0, MPI_COMM_WORLD); 
-
-    MPI_Barrier(MPI_COMM_WORLD);
-
-    // Print process segment of array
-    printf("start: %d, end: %d, local_size:%d\n", start, end, local_size);
-
-    bool local_sorted = sort_check(local_values, local_size);
-
-    // Gather local portions into global array
-    bool all_sorted;
-    MPI_Allreduce(&local_sorted, &all_sorted, 1, MPI_C_BOOL, MPI_LAND, MPI_COMM_WORLD);
-
-    if (rank == 0) 
-    {
-        if (all_sorted) 
-        {
-            // Check if each segment of values is sorted
-            float cur_largest = values[local_size - 1];
-            for (int i = 1; i < NUM_VALS/local_size; i++)
-            {
-                if (values[i*local_size] > cur_largest)
-                {
-                    cur_largest = values[(i+1)*local_size - 1];
-                }
-                else
-                {
-                    all_sorted = false;
-                    printf("The entire array is not sorted.");
-                    break;
-                }
-            }
-            printf("The entire array is sorted.\n");
-        }
-        else
-        {
-            printf("The entire array is not sorted.\n");
-        }
-    }
-
-    free(local_values);
-
-    CALI_MARK_END(sort_check_name);
 }
 
 //merge two arrays so that if the two arrays were sorted, the returning array will be sorted
@@ -274,7 +216,6 @@ void messagePassingCheck(int NUM_VALS, float *values, int num_procs)
       printf("The array is sorted.\n");
     } else {
       printf("The array is NOT sorted.\n");
-
     }
    
   }
@@ -374,19 +315,15 @@ void parallelMergesort(int NUM_VALS, float *values, int num_procs)
   int start = rank * local_size;
   int end = (rank == num_procs - 1) ? NUM_VALS : start + local_size;
 
-  //local_size = end - start;
+  local_size = end - start;
 
   float* local_values = (float*)malloc(local_size * sizeof(float));
 
   // Scatter the array among processors
   MPI_Scatter(values, local_size, MPI_FLOAT, local_values, local_size, MPI_FLOAT, 0, MPI_COMM_WORLD);
   MPI_Barrier(MPI_COMM_WORLD);
-  if(rank == 1) {
-    printf("1: Here are my values.\n");
-    for(int i = 0; i < local_size; i++) {
-      printf("1: Value: %.6f\n", local_values[i]);
-    }
-  }
+
+  CALI_MARK_BEGIN(MPI_mergesort);
 
   //generate a binary tree with num_procs leaves
   //it's height is equal to log_2(num_procs)
@@ -415,7 +352,7 @@ void parallelMergesort(int NUM_VALS, float *values, int num_procs)
 
   //derive a list of destinations that this thread's data will go to
   string destList = stepUpTree(myLeaf, "");
-  printf("My rank is %d and my dest list is %s.\n", rank, destList.c_str());
+  //printf("My rank is %d and my dest list is %s.\n", rank, destList.c_str());
   
   destList.erase(0,1);
 
@@ -437,30 +374,30 @@ void parallelMergesort(int NUM_VALS, float *values, int num_procs)
         float* foreign_values = (float*)malloc(current_size * sizeof(float));
         MPI_Recv(foreign_values, current_size, MPI_FLOAT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-        printf("0: Here are his values.\n");
-        for(int i = 0; i < local_size; i++) {
-          printf("0: Value: %.6f\n", foreign_values[i]);
-        }
+//        printf("0: Here are his values.\n");
+//        for(int i = 0; i < current_size; i++) {
+//          printf("0: Value: %.6f\n", foreign_values[i]);
+//        }
 
         float* combined_values = new float[current_size * 2];
-        std::copy(local_values, local_values + local_size, combined_values);
-        std::copy(foreign_values, foreign_values + local_size, combined_values + local_size);
+        std::copy(local_values, local_values + current_size, combined_values);
+        std::copy(foreign_values, foreign_values + current_size, combined_values + current_size);
         merge(combined_values, 0, current_size-1, (current_size * 2)-1);
 
         free(local_values);
         free(foreign_values);
         local_values = combined_values;
 
-        printf("My rank is %d and I Received message from another processor, check the sorted resultant value of local_values\n", rank);
+        //printf("My rank is %d and I Received message from another processor, check the sorted resultant value of local_values\n", rank);
 
-        for(int i = 0; i < current_size * 2; i++) {
-          printf("%d: Value: %.6f\n", rank, local_values[i]);
-        }
+//        for(int i = 0; i < current_size * 2; i++) {
+//          printf("%d: Value: %.6f\n", rank, local_values[i]);
+//        }
         
       } else {
         //send it to dest
         MPI_Send(local_values, current_size, MPI_FLOAT, dest, 0, MPI_COMM_WORLD);
-        printf("My rank is %d and I'm sending to %d.\n", rank, dest);
+        //printf("My rank is %d and I'm sending to %d.\n", rank, dest);
         work = 0; //this processor now rests
       }
     }
@@ -471,11 +408,24 @@ void parallelMergesort(int NUM_VALS, float *values, int num_procs)
 
     if(destList.size() == 0) {break;}
   }
- 
+  CALI_MARK_END(MPI_mergesort);
+
+  CALI_MARK_BEGIN(sort_check_name);
+  //process 0 now has the final result
+  if(rank == 0) {
+    for(int i = 0; i < NUM_VALS; i++) {
+      printf("0: Value: %.6f\n", local_values[i]);
+    }
+    bool result = sort_check(local_values, NUM_VALS);
+    if(result) {
+      printf("The array is sorted.\n");
+    } else {
+      printf("The array is NOT sorted.\n");
+    }
+  }
+  CALI_MARK_END(sort_check_name);
   
 }
-
-
 
 int main(int argc, char* argv[]) 
 {
@@ -528,8 +478,8 @@ int main(int argc, char* argv[])
     parallel_array_fill(NUM_VALS, values, num_procs, rank);
 
     
-    messagePassingCheck(NUM_VALS, values, num_procs);
-    //parallelMergesort(NUM_VALS, values, num_procs);
+    //messagePassingCheck(NUM_VALS, values, num_procs);
+    parallelMergesort(NUM_VALS, values, num_procs);
 
 
     // Check if values is sorted
