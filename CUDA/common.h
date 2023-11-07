@@ -7,6 +7,7 @@
 #include <adiak.hpp>
 
 #define bitonic_sort_step_region "bitonic_sort_step"
+#define selection_sort_region "selection_sort_region"
 #define cudaMemcpy_host_to_device "cudaMemcpy_host_to_device"
 #define cudaMemcpy_device_to_host "cudaMemcpy_device_to_host"
 #define array_fill_name "array_fill"

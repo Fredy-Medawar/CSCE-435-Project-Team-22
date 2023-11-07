@@ -62,7 +62,7 @@ void selection_sort(int NUM_VALS, vector<float> *local_values, int local_size, i
                 smallestValue = smallestInProcess;
             else
             {
-                smallestValue = rand() % 500;
+                smallestValue = 150;
             }
         }
             
@@ -70,7 +70,7 @@ void selection_sort(int NUM_VALS, vector<float> *local_values, int local_size, i
             if (rank == 0) {
                 int receive;
                 MPI_Recv(&receive, 1, MPI_INT, b, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                if (receive != 100) {
+                if (receive != 150) {
                     if (receive < smallestValue) {
                         smallestValue = receive;
                         smallestProcess = b;
