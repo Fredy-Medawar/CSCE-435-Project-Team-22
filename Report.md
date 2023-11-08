@@ -121,7 +121,7 @@ Performance of different implementations of different sorting algorithms in MPI 
     mergesort(arr, start, end):
         if start > end 
             return
-        mid = (start+end)/2
+        set mid = (start+end)/2
         mergeSort(arr, start, mid)
         mergeSort(arr, mid+1, end)
         merge(arr, start, mid, end)
