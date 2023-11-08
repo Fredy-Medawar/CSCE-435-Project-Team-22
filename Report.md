@@ -18,6 +18,7 @@ Performance of different implementations of different sorting algorithms in MPI 
 ## 2. _due 10/25_ Brief project description (what algorithms will you be comparing and on what architectures)
 - Sample Sort (MPI)
 - Bitonic Sort (CUDA)
+- Mergesort (CUDA, MPI)
 
 ## 2. Pseudocode
 
@@ -110,8 +111,67 @@ Performance of different implementations of different sorting algorithms in MPI 
           bitonic_sort_step(dev_values, j, k) call to device code
 
       copy dev_values from device to host
+
+### Mergesort
+    merge(arr, start, mid, end)
+      treat start-mid and mid+1 - end as seperate lists
+      parse through the lists putting the smaller value first
+      after parsing is completely, fill the rest of the array with any leftover values
+      
+    mergesort(arr, start, end):
+        if start > end 
+            return
+        mid = (start+end)/2
+        mergeSort(arr, start, mid)
+        mergeSort(arr, mid+1, end)
+        merge(arr, start, mid, end)
           
 ## 3. _due 11/08_ Pseudocode for each algorithm and implementation
+### Mergesort (MPI)
+    mergesort() (pseudocode in section 2)
+        
+    MPImergesort(arr, num_vals, num_procs)
+        generate a binary tree with a leaf for every process, so that the root has value zero and for every parent, one child has the same value as the parent and one child has a new value
+        node thisProcsLeaf = searchForLeaf(rank)
+        destList = walkUpTree(thisProcsLeaf) 
+        set work = 1
+        set local_size = num_vals / num_procs
+        while work == 1:
+            mergesort(local_values)
+            nextDest = destList.pop()
+            if(nextDest == rank)
+                receive a message from another processor sending this process data
+                combined_vals = her_vals + local_vals
+                mergesort(combined_vals, 0, local_size * 2)
+                local_vals = combined_vals
+            else
+                send our sorted local data to the processor with rank == nextDest
+                work = 0 (this process does no more computation)
+
+            if(destList.empty())
+                work = 0 (the root process has finished sorting the array)
+### Mergesort (CUDA)
+    mergesort() (pseudocode in section 2)
+    
+    CUDAmergesortStep(arr, num_vals, sectionWidth)
+        set start = sectionWidth * threadID
+        set end = left + sectionWidth
+        mergesort(arr, start, end)
+
+    CUDAmergesort(arr, num_vals, num_threads, num_blocks)
+        set sliceWidth = 2
+        set threadsToUse = num_threads
+        if(threadsToUse > num_vals / sliceWidth)
+            threadsToUse = num_vals / sliceWidth
+        if(threadsToUse < num_vals / sliceWidth)
+            sliceWidth = num_vals / threadsToUse
+        forever
+            CUDAMergesortStep<<<num_blocks, threadsToUse>>>(arr, num_vals, sliceWidth)
+            if(threadsToUse == 1)
+                break
+            sliceWidth *= 2
+            threadsToUse /= 2
+        
 
 ## 3. _due 11/08_ Evaluation plan - what and how will you measure and compare
 
