@@ -432,5 +432,5 @@ End Function
 ```
 
 ## 3. _due 11/08_ Evaluation plan - what and how will you measure and compare
-    We will evaluate the performance in terms of variable problem size and number of threads for the CUDA algorithms. We will evaluate the performance by Weak Scaling for the MPI algorithms.
+We will evaluate the performance in terms of variable problem size and number of threads for the CUDA algorithms. We will evaluate the performance by Weak Scaling for the MPI algorithms.
 
