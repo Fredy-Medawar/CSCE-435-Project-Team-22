@@ -2,18 +2,18 @@
 
 int smallest(float* a, int b, int c) {
     int temp = b;
-    for (int x = b + 1; x < c; x++)     {
+    for (int x = b + 1; x < c; x++) {
         if (a[temp] > a[x])
             temp = x;
     }
-    int z = a[temp];
+    float z = a[temp];
     a[temp] = a[b];
     a[b] = z;
-    
+
     return a[b];
 }
 
-void selection_sort(int NUM_VALS, vector<float> *local_values, int local_size, int num_procs, int rank, int sample_size) {
+void selection_sort(int NUM_VALS, vector<float>* local_values, int local_size, int num_procs, int rank, int sample_size) {
     CALI_MARK_BEGIN(SELECTION_SORT_NAME);
 
     float* selectionArrayA = (float*)malloc(sample_size * sizeof(float));
@@ -30,7 +30,7 @@ void selection_sort(int NUM_VALS, vector<float> *local_values, int local_size, i
     }
 
     int size = NUM_VALS / num_procs;
-    
+
     float* selected = NULL;
     int smallestValue = 0;
     int smallestInProcess;
@@ -39,7 +39,7 @@ void selection_sort(int NUM_VALS, vector<float> *local_values, int local_size, i
         selected = (float*)malloc(NUM_VALS * sizeof(float));
     }
 
-    float* selectionArrayB = (float*)malloc(NUM_VALS * sizeof(float));
+    float* selectionArrayB = (float*)malloc(NUM_VALS * sizeof(float);
 
     // CALI_MARK_BEGIN("Scatter Array");
 
@@ -60,14 +60,13 @@ void selection_sort(int NUM_VALS, vector<float> *local_values, int local_size, i
         smallestProcess = 0;
 
         if (rank == 0) {
-            if(!isNull)
+            if (!isNull)
                 smallestValue = smallestInProcess;
-            else
-            {
+            else {
                 smallestValue = 150;
             }
         }
-            
+
         for (int b = 1; b < num_procs; b++) {
             if (rank == 0) {
                 int receive;
@@ -78,9 +77,7 @@ void selection_sort(int NUM_VALS, vector<float> *local_values, int local_size, i
                         smallestProcess = b;
                     }
                 }
-            }
-            else if (rank == b)
-            {
+            } else if (rank == b) {
                 if (!isNull) {
                     MPI_Send(&smallestInProcess, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
                 } else {
@@ -89,7 +86,7 @@ void selection_sort(int NUM_VALS, vector<float> *local_values, int local_size, i
                 }
             }
         }
-        
+
         MPI_Bcast(&smallestProcess, 1, MPI_INT, 0, MPI_COMM_WORLD);
         MPI_Barrier(MPI_COMM_WORLD);
 
@@ -100,7 +97,7 @@ void selection_sort(int NUM_VALS, vector<float> *local_values, int local_size, i
         if (rank == smallestProcess) {
             startPoint++;
             smallestInProcess = smallest(selectionArrayB, startPoint, size);
-            if (startPoint > size-1) {
+            if (startPoint > size - 1) {
                 isNull = 1;
             }
         }
@@ -108,7 +105,10 @@ void selection_sort(int NUM_VALS, vector<float> *local_values, int local_size, i
 
     // CALI_MARK_END("Selection Sort");
 
-    if (rank == 0) {    
+    // Gather the sorted values from all processes to process rank 0
+    MPI_Gather(selected, NUM_VALS, MPI_FLOAT, selected, NUM_VALS, MPI_FLOAT, 0, MPI_COMM_WORLD);
+
+    if (rank == 0) {
         printf("\nThis is the sorted array: ");
         for (int c = 0; c < NUM_VALS; c++) {
             if (c % num_procs == 0)
@@ -126,5 +126,4 @@ void selection_sort(int NUM_VALS, vector<float> *local_values, int local_size, i
     MPI_Finalize();
 
     CALI_MARK_END(SELECTION_SORT_NAME);
-
 }
