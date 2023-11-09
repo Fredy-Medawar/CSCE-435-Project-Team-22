@@ -24,7 +24,7 @@ Performance of different implementations of different sorting algorithms in MPI 
 
 ### Selection Sort (MPI):
 
-Function smallest(a, b, c) -> int
+smallest(a, b, c) -> int
     Initialize temp to b
     For x from b + 1 to c - 1 do
         a[temp] > a[x] then
@@ -32,10 +32,8 @@ Function smallest(a, b, c) -> int
     end for
     Swap a[temp] and a[b]
     Return a[b]
-End Function
 
-Function selection_sort(NUM_VALS: int, local_values: vector of float, local_size: int, num_procs: int, rank: int, sample_size: int)
-    CALI_MARK_BEGIN(SELECTION_SORT_NAME)
+selection_sort(NUM_VALS: int, local_values: vector of float, local_size: int, num_procs: int, rank: int, sample_size: int)
 
     Initialize selectionArrayA as an array of float with size sample_size
 
@@ -131,8 +129,55 @@ Function selection_sort(NUM_VALS: int, local_values: vector of float, local_size
     MPI_Barrier(world comm)
     MPI_Finalize()
 
-    CALI_MARK_END(SELECTION_SORT_NAME)
+Function
+
+### Selection Sort (CUDA)
+selection_sort_step(dev_values, partitionBegin, partitionEnd)
+
+    Get the thread index threadIdx.x
+
+    Initialize start with partitionBegin[threadIdx.x]
+    Initialize end with partitionEnd[start]
+
+    If start is greater than or equal to end then Return
+
+    For i from start to end - 1 do
+        Initialize minIndex with i
+
+        For j from i + 1 to end - 1 do
+            If dev_values[j] is less than dev_values[minIndex] then
+                Set minIndex to j
+
+        Swap dev_values[i] and dev_values[minIndex]
 End Function
+
+Function selectionsort(values: host float array, dev_values: device float array, NUM_VALS: int, THREADS: int, BLOCKS: int)
+
+    Initialize the number of blocks with BLOCKS
+    Initialize the number of threads per block with THREADS
+    Initialize partitionEnd as a device unsigned int array of size NUM_VALS
+    Initialize partitionBegin as a device unsigned int array of size NUM_VALS
+
+    Allocate device memory for partitionEnd and partitionBegin
+
+    Initialize partsize with NUM_VALS * size of unsigned int
+    Set every element in partitionEnd and partitionBegin to 0 and NUM_VALS in device memory
+
+    Initialize i to 0
+
+    While i is less than NUM_VALS
+        Launch the selection_sort_step kernel with blocks, threads, dev_values, partitionBegin, and partitionEnd
+
+        Synchronize the device to ensure the kernel completes
+
+        Increment i
+
+    Synchronize the device again to ensure all kernels are complete
+
+    Free device memory for partitionEnd and partitionBegin
+
+End Function
+
 
 
 ### Sample Sort (MPI):
@@ -200,6 +245,7 @@ End Function
           receive recv_buf[i] from rank i into local_values
 
       sequentially sort local_values
+
 
 ### Bitonic Sort (CUDA):
     bitonic_sort_step(dev_values, j, k)

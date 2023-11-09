@@ -35,7 +35,7 @@ void selectionsort(float *values, float* dev_values, int NUM_VALS, int THREADS, 
 
     CALI_MARK_BEGIN(selection_sort_region);
     int i = 0;
-    while (i <= NUM_VALS) {
+    while (i < NUM_VALS) {
         selection_sort_step<<<blocks, threads>>>(dev_values, partitionBegin, partitionEnd);
         cudaDeviceSynchronize();
         i++;
