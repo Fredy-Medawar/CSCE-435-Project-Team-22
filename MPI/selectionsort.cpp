@@ -13,23 +13,21 @@ float smallest(float* a, int b, int c) {
     return a[b];
 }
 
-void selection_sort(int NUM_VALS, vector<float>* local_values, int local_size, int num_procs, int rank, int sample_size) {
+void selection_sort(int NUM_VALS, vector<float>* local_values, int local_size, int num_procs, int rank) {
     CALI_MARK_BEGIN(SELECTION_SORT_NAME);
 
-    float* selectionArrayA = (float*)malloc(sample_size * sizeof(float));
+    float* selectionArrayA = (float*)malloc(NUM_VALS * sizeof(float));
 
-    int sampleIndex;
+    int localIndex;
 
     if (rank == 0) {
         srand(time(NULL) + rank);
         printf("This is the unsorted array: ");
         for (int i = 0; i < NUM_VALS; i++) {
-            sampleIndex = rand() % local_size;
-            selectionArrayA[i] = local_values->at(sampleIndex);
+            localIndex = rand() % local_size;
+            selectionArrayA[i] = local_values->at(localIndex);
         }
     }
-
-    int size = NUM_VALS / num_procs;
 
     float* selected = NULL;
     float* gatheredArray = NULL; // Separate array for gathering data
@@ -41,12 +39,12 @@ void selection_sort(int NUM_VALS, vector<float>* local_values, int local_size, i
         gatheredArray = (float*)malloc(NUM_VALS * sizeof(float));
     }
 
-    float* selectionArrayB = (float*)malloc(NUM_VALS * sizeof(float));
+    float* selectionArrayB = (float*)malloc(local_size * sizeof(float));
 
     // CALI_MARK_BEGIN("Scatter Array");
 
-    MPI_Scatter(selectionArrayA, size, MPI_FLOAT, selectionArrayB, size, MPI_FLOAT, 0, MPI_COMM_WORLD);
-    smallestInProcess = smallest(selectionArrayB, 0, size);
+    MPI_Scatter(selectionArrayA, local_size, MPI_FLOAT, selectionArrayB, local_size, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    smallestInProcess = smallest(selectionArrayB, 0, local_size);
 
     // CALI_MARK_END("Scatter Array");
 
@@ -98,8 +96,8 @@ void selection_sort(int NUM_VALS, vector<float>* local_values, int local_size, i
 
         if (rank == smallestProcess) {
             startPoint++;
-            smallestInProcess = smallest(selectionArrayB, startPoint, size);
-            if (startPoint > size - 1) {
+            smallestInProcess = smallest(selectionArrayB, startPoint, local_size);
+            if (startPoint > local_size - 1) {
                 isNull = 1;
             }
         }
