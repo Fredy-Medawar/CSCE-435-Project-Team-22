@@ -242,50 +242,7 @@ End Function
       copy device values from device to host as values
 
 ## 3. _due 11/08_ Pseudocode for each algorithm and implementation
-### Mergesort (MPI)
-    mergesort() (pseudocode in section 2)
-        
-    MPImergesort(arr, num_vals, num_procs)
-        generate a binary tree with a leaf for every process, so that the root has value zero and for every parent, one child has the same value as the parent and one child has a new value
-        node thisProcsLeaf = searchForLeaf(rank)
-        destList = walkUpTree(thisProcsLeaf) 
-        set work = 1
-        set local_size = num_vals / num_procs
-        while work == 1:
-            mergesort(local_values)
-            nextDest = destList.pop()
-            if(nextDest == rank)
-                receive a message from another processor sending this process data
-                combined_vals = her_vals + local_vals
-                mergesort(combined_vals, 0, local_size * 2)
-                local_vals = combined_vals
-            else
-                send our sorted local data to the processor with rank == nextDest
-                work = 0 (this process does no more computation)
 
-            if(destList.empty())
-                work = 0 (the root process has finished sorting the array)
-### Mergesort (CUDA)
-    mergesort() (pseudocode in section 2)
-    
-    CUDAmergesortStep(arr, num_vals, sectionWidth)
-        set start = sectionWidth * threadID
-        set end = left + sectionWidth
-        mergesort(arr, start, end)
-
-    CUDAmergesort(arr, num_vals, num_threads, num_blocks)
-        set sliceWidth = 2
-        set threadsToUse = num_threads
-        if(threadsToUse > num_vals / sliceWidth)
-            threadsToUse = num_vals / sliceWidth
-        if(threadsToUse < num_vals / sliceWidth)
-            sliceWidth = num_vals / threadsToUse
-        forever
-            CUDAMergesortStep<<<num_blocks, threadsToUse>>>(arr, num_vals, sliceWidth)
-            if(threadsToUse == 1)
-                break
-            sliceWidth *= 2
-            threadsToUse /= 2
 ### Sample Sort (MPI):
     sample_sort(NUM_VALS, list local_values, local_size, num_procs, rank, sample_size)
       for i = 0 to local_size
@@ -351,6 +308,7 @@ End Function
           receive recv_buf[i] from rank i into local_values
 
       sequentially sort local_values
+
 ### Bitonic Sort (CUDA):
     bitonic_sort_step(dev_values, j, k)
       i = threadIdx.x + blockDim.x * blockIdx.x
@@ -374,6 +332,52 @@ End Function
           bitonic_sort_step(dev_values, j, k) call to device code
 
       copy dev_values from device to host
+
+      ### Mergesort (MPI)
+    mergesort() (pseudocode in section 2)
+        
+    MPImergesort(arr, num_vals, num_procs)
+        generate a binary tree with a leaf for every process, so that the root has value zero and for every parent, one child has the same value as the parent and one child has a new value
+        node thisProcsLeaf = searchForLeaf(rank)
+        destList = walkUpTree(thisProcsLeaf) 
+        set work = 1
+        set local_size = num_vals / num_procs
+        while work == 1:
+            mergesort(local_values)
+            nextDest = destList.pop()
+            if(nextDest == rank)
+                receive a message from another processor sending this process data
+                combined_vals = her_vals + local_vals
+                mergesort(combined_vals, 0, local_size * 2)
+                local_vals = combined_vals
+            else
+                send our sorted local data to the processor with rank == nextDest
+                work = 0 (this process does no more computation)
+
+            if(destList.empty())
+                work = 0 (the root process has finished sorting the array)
+
+### Mergesort (CUDA)
+    mergesort() (pseudocode in section 2)
+    
+    CUDAmergesortStep(arr, num_vals, sectionWidth)
+        set start = sectionWidth * threadID
+        set end = left + sectionWidth
+        mergesort(arr, start, end)
+
+    CUDAmergesort(arr, num_vals, num_threads, num_blocks)
+        set sliceWidth = 2
+        set threadsToUse = num_threads
+        if(threadsToUse > num_vals / sliceWidth)
+            threadsToUse = num_vals / sliceWidth
+        if(threadsToUse < num_vals / sliceWidth)
+            sliceWidth = num_vals / threadsToUse
+        forever
+            CUDAMergesortStep<<<num_blocks, threadsToUse>>>(arr, num_vals, sliceWidth)
+            if(threadsToUse == 1)
+                break
+            sliceWidth *= 2
+            threadsToUse /= 2
 
 ## 3. _due 11/08_ Evaluation plan - what and how will you measure and compare
 
