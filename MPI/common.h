@@ -6,6 +6,7 @@
 #include <utility>
 #include <bits/stdc++.h> 
 #include <time.h>
+#include <vector>
 
 //#include <caliper/cali.h>
 //#include <caliper/cali-manager.h>

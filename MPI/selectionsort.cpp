@@ -1,6 +1,6 @@
 #include "common.h"
 
-int smallest(int* a, int b, int c) {
+int smallest(float* a, int b, int c) {
     int temp = b;
     for (int x = b + 1; x < c; x++)     {
         if (a[temp] > a[x])
@@ -18,19 +18,21 @@ void selection_sort(int NUM_VALS, vector<float> *local_values, int local_size, i
 
     float* selectionArrayA = (float*)malloc(sample_size * sizeof(float));
 
+    int sampleIndex;
+
     if (rank == 0) {
         srand(time(NULL) + rank);
         printf("This is the unsorted array: ");
-        for (int i = 0; i < n; i++) {
-            selectionArrayA[i] = rand() % local_size;
-            selectionArrayA[i] = local_values->at(sample_index);
+        for (int i = 0; i < NUM_VALS; i++) {
+            sampleIndex = rand() % local_size;
+            selectionArrayA[i] = local_values->at(sampleIndex);
         }
     }
 
     int size = NUM_VALS / num_procs;
     
     float* selected = NULL;
-    int smallestValue = NULL;
+    int smallestValue = 0;
     int smallestInProcess;
 
     if (rank == 0) {
@@ -111,7 +113,7 @@ void selection_sort(int NUM_VALS, vector<float> *local_values, int local_size, i
         for (int c = 0; c < n; c++) {
             if (c % num_procs == 0)
                 printf("\n");
-            printf("%3d ", selected[c]);
+            printf("%3f ", selected[c]);
         }
         printf("\n");
         printf("\n");
@@ -123,6 +125,6 @@ void selection_sort(int NUM_VALS, vector<float> *local_values, int local_size, i
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Finalize();
 
-    CALI_MARK_END(SELECTION_SORT_NAME); // TODO: change common.h to define argument
+    CALI_MARK_END(SELECTION_SORT_NAME);
 
 }
