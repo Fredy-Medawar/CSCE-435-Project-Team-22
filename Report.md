@@ -334,7 +334,7 @@ End Function
 
       copy dev_values from device to host
 
-      ### Mergesort (MPI)
+### Mergesort (MPI)
     mergesort() (pseudocode in section 2)
         
     MPImergesort(arr, num_vals, num_procs)
