@@ -360,6 +360,7 @@ End Function
 
 
 ### Odd even sort (CUDA)
+```
   function oddeven(data):
     for i in [0,N):
       oddeven_dev<<<blocks, threads>>>(data, i%2);
@@ -369,12 +370,13 @@ End Function
     if (phase==0 and idx%2==0) or (phase==1 and idx%2==1):
       if data[idx+1] < data[idx]:
         swap data at idx+1,idx
-
+```
 ### Odd even sort (MPI)
+```
   function rightSide(local, local_size, rank):
     Send local[rank][0] to rank-1
     receive new local[rank][0] from rank-1
-    
+
   function leftSide(local, local_size, rank):
     Receive local[rank+1][0] from rank+1
     sort local[rank][-1], local[rank+1][0]
@@ -404,6 +406,7 @@ End Function
             rightSide(local_data, local_size, rank)
       
       MPI_BARRIER
+```
 ### Mergesort (CUDA)
     mergesort() (pseudocode in section 2)
     
