@@ -1,7 +1,6 @@
 # CSCE 435 Group project
 
-## 0. Group number: 
-22
+## 0. Group number: 22
 
 ## 1. Group members:
 1. Joseph Buskmiller
