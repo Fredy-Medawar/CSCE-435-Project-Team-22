@@ -20,6 +20,7 @@ Performance of different implementations of different sorting algorithms in MPI 
 - Bitonic Sort (CUDA)
 - Odd even sort (CUDA, MPI)
 - Mergesort (CUDA, MPI)
+- Selection Sort (CUDA, MPI)
 
 ## 2. Pseudocode
 
