@@ -24,111 +24,114 @@ Performance of different implementations of different sorting algorithms in MPI 
 ## 2. Pseudocode
 
 ### Selection Sort (MPI):
+    function smallest(a: array of float, b: int, c: int) -> float
+    Create a variable temp and set it to b
+    Iterate from x in range b + 1 to c - 1
+        If a[temp] is greater than a[x]
+            Update temp to x
+        End If
+    End Iterate
+    Create a variable z and set it to a[temp]
+    Swap a[temp] and a[b]
+    Return a[b]
+    End function
 
-    smallest(a, b, c) -> int
-        Initialize temp to b
-        For x from b + 1 to c - 1 do
-            a[temp] > a[x] then
-                Set temp to x
-        end for
-        Swap a[temp] and a[b]
-        Return a[b]
-
-    selection_sort(NUM_VALS: int, local_values: vector of float, local_size: int, num_procs: int, rank: int, sample_size: int)
+    function selection_sort(NUM_VALS: int, local_values: array of float, local_size: int, num_procs: int, rank: int)
+        Allocate memory for selectionArrayA as an array of NUM_VALS floats
+        Initialize localIndex to 0
     
-        Initialize selectionArrayA as an array of float with size sample_size
-    
-        If rank is 0 then
-            Initialize a random number generator with a seed of time(NULL) + rank
+        If rank is 0
+            Seed the random number generator with the current time plus rank
             Print "This is the unsorted array: "
-            For i from 0 to NUM_VALS - 1 do
-                Generate a random sampleIndex between 0 and local_size - 1
-                Set selectionArrayA[i] to local_values[sampleIndex]
+            For i in range 0 to NUM_VALS - 1
+                Generate a random localIndex within the range local_size
+                Set selectionArrayA[i] to local_values[localIndex]
             End For
         End If
     
-        Initialize size as NUM_VALS divided by num_procs
+        Initialize selected and gatheredArray to NULL
+        Initialize smallestValue to 0 and smallestInProcess to 0
     
-        Initialize selected as an array of float or null
-        Initialize smallestValue to 0
-        Initialize smallestInProcess
+        If rank is 0
+            Allocate memory for selected as an array of NUM_VALS floats
+            Allocate memory for gatheredArray as an array of NUM_VALS floats
+        End If
     
-        If rank is 0 then
-            Allocate memory for selected to store NUM_VALS float values
+        Allocate memory for selectionArrayB as an array of local_size floats
     
-        Initialize selectionArrayB as an array of float with size NUM_VALS
+        Use MPI to scatter selectionArrayA to selectionArrayB
     
-        Call MPI_Scatter on arrayA to array B transferring size elements of type float
-        Call smallest function to calculate smallestInProcess on array B
+        Set smallestInProcess to the result of smallest(selectionArrayB, 0, local_size)
     
         Initialize smallestProcess to 0
         Initialize startPoint to 0
         Initialize isNull to 0
     
-        MPI_Barrier(world comm)
-    
-        For a from 0 to NUM_VALS - 1 do
+        For a in range 0 to NUM_VALS - 1
             Set smallestProcess to 0
     
-            If rank is 0 then
-                If not isNull then
+            If rank is 0
+                If isNull is false
                     Set smallestValue to smallestInProcess
                 Else
                     Set smallestValue to 150
                 End If
             End If
     
-            For b from 1 to num_procs - 1 do
-                If rank is 0 then
-                    Initialize receive as an integer
-                    MPI_Recv(receive, 1, MPI_INT, b, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE)
-                    If receive is not equal to 150 then
-                        If receive is less than smallestValue then
-                            Set smallestValue to receive
-                            Set smallestProcess to b
-                        End If
+            For b in range 1 to num_procs - 1
+                If rank is 0
+                    Receive receive from process b using MPI
+                    If receive is not 150 and receive is less than smallestValue
+                        Set smallestValue to receive
+                        Set smallestProcess to b
                     End If
-                Else If rank is b then
-                    If not isNull then
-                        MPI_Send(smallestInProcess, 1, MPI_INT, 0, 0, MPI_COMM_WORLD)
+                ElseIf rank is b
+                    If isNull is false
+                        Send smallestInProcess to process 0 using MPI
                     Else
-                        Set x to 69  // Replace 69 with meaningful data
-                        MPI_Send(x, 1, MPI_INT, 0, 0, MPI_COMM_WORLD)
+                        Set x to 69  # No useful data
+                        Send x to process 0 using MPI
                     End If
                 End If
             End For
     
-            Broadcast data from root process to all processes in world comm
-            MPI_Barrier(world comm)
+            Broadcast smallestProcess using MPI
+            Use MPI Barrier
     
-            If rank is 0 then
+            If rank is 0
                 Set selected[a] to smallestValue
             End If
     
-            If rank is smallestProcess then
-                Increment startPoint
-                Set smallestInProcess to smallest(selectionArrayB, startPoint, size)
-                If startPoint is greater than size - 1 then
+            If rank is smallestProcess
+                Increment startPoint by 1
+                Set smallestInProcess to the result of smallest(selectionArrayB, startPoint, local_size)
+                If startPoint is greater than local_size - 1
                     Set isNull to 1
                 End If
-            End If
+            End For
         End For
     
-        If rank is 0 then
-            Print "This is the sorted array: "
-            For c from 0 to NUM_VALS - 1 do
-                If c is a multiple of num_procs then
-                    Print a newline
-                End If
-                Print selected[c] with formatting
+        Use MPI to gather selected into gatheredArray
+    
+        If rank is 0
+            Print "\nThis is the sorted array: "
+            For c in range 0 to NUM_VALS - 1
+                If c modulo num_procs is 0
+                    Print "\n"
+                Print gatheredArray[c]
             End For
-            Print two newlines
+            Print "\n\n"
         End If
     
         Free memory for selectionArrayA and selectionArrayB
     
-        MPI_Barrier(world comm)
-        MPI_Finalize()
+        If rank is 0
+            Free memory for selected and gatheredArray
+        End If
+    
+        Use MPI Barrier
+        Use MPI Finalize
+    End function
 
 ### Selection Sort (CUDA)
     selection_sort_step(dev_values, partitionBegin, partitionEnd)
