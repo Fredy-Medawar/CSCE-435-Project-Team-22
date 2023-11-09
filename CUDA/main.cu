@@ -103,6 +103,8 @@ int main(int argc, char *argv[])
         bitonic_sort(values, dev_values, NUM_VALS, THREADS, BLOCKS);
     } else if(sort_alg==1) {
         oddeven_sort(values, dev_values, NUM_VALS, THREADS, BLOCKS);
+    } else if(sort_alg==2) {
+        selectionsort(values, dev_values, NUM_VALS, THREADS, BLOCKS);
     }
 
     device_sort_check<<<BLOCKS, THREADS>>>(dev_values, NUM_VALS, dev_sorted);

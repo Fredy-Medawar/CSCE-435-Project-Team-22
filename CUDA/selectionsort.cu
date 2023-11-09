@@ -21,7 +21,7 @@ __global__ void selection_sort_step(float *dev_values, unsigned int* partitionBe
     }
 }
 
-void selection_sort(float *values, float* dev_values, int NUM_VALS, int THREADS, int BLOCKS)
+void selectionsort(float *values, float* dev_values, int NUM_VALS, int THREADS, int BLOCKS)
 {
     dim3 blocks(BLOCKS, 1);    /* Number of blocks */
     dim3 threads(THREADS, 1);  /* Number of threads */
