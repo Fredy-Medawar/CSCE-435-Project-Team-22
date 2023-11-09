@@ -18,6 +18,7 @@ Performance of different implementations of different sorting algorithms in MPI 
 ## 2. _due 10/25_ Brief project description (what algorithms will you be comparing and on what architectures)
 - Sample Sort (MPI)
 - Bitonic Sort (CUDA)
+- Odd even sort (CUDA, MPI)
 - Mergesort (CUDA, MPI)
 
 ## 2. Pseudocode
@@ -357,6 +358,52 @@ End Function
             if(destList.empty())
                 work = 0 (the root process has finished sorting the array)
 
+
+### Odd even sort (CUDA)
+  function oddeven(data):
+    for i in [0,N):
+      oddeven_dev<<<blocks, threads>>>(data, i%2);
+
+  function oddeven_dev(data, phase):
+    idx = threadIdx + blockDim * blockIdx;
+    if (phase==0 and idx%2==0) or (phase==1 and idx%2==1):
+      if data[idx+1] < data[idx]:
+        swap data at idx+1,idx
+
+### Odd even sort (MPI)
+  function rightSide(local, local_size, rank):
+    Send local[rank][0] to rank-1
+    receive new local[rank][0] from rank-1
+    
+  function leftSide(local, local_size, rank):
+    Receive local[rank+1][0] from rank+1
+    sort local[rank][-1], local[rank+1][0]
+    send new local[rank+1][0] to rank+1
+
+  function oddeven(local_data, local_size, nproc, rank):
+    for i in [0,N):
+      for j in [i%2,local_size):
+        sort local_data[j], local_data[j+1]
+      MPI_BARRIER
+      if local_size%2==1:
+        if i%2 == 0:
+          if rank%2==0:
+            rightSide(local_data, local_size, rank)
+          else:
+            leftSide(local_data, local_size, rank)
+        else:
+          if rank%2==0:
+            leftSide(local_data, local_size, rank)
+          else:
+            rightSide(local_data, local_size, rank)
+      else:
+        if i%2==1:
+          if rank%2==0:
+            leftSide(local_data, local_size, rank)
+          else:
+            rightSide(local_data, local_size, rank)
+      
+      MPI_BARRIER
 ### Mergesort (CUDA)
     mergesort() (pseudocode in section 2)
     
