@@ -1,6 +1,6 @@
 #include "common.h"
 
-int smallest(float* a, int b, int c) {
+float smallest(float* a, int b, int c) {
     int temp = b;
     for (int x = b + 1; x < c; x++) {
         if (a[temp] > a[x])
@@ -32,14 +32,16 @@ void selection_sort(int NUM_VALS, vector<float>* local_values, int local_size, i
     int size = NUM_VALS / num_procs;
 
     float* selected = NULL;
+    float* gatheredArray = NULL; // Separate array for gathering data
     int smallestValue = 0;
     int smallestInProcess;
 
     if (rank == 0) {
         selected = (float*)malloc(NUM_VALS * sizeof(float));
+        gatheredArray = (float*)malloc(NUM_VALS * sizeof(float));
     }
 
-    float* selectionArrayB = (float*)malloc(NUM_VALS * sizeof(float);
+    float* selectionArrayB = (float*)malloc(NUM_VALS * sizeof(float));
 
     // CALI_MARK_BEGIN("Scatter Array");
 
@@ -106,14 +108,14 @@ void selection_sort(int NUM_VALS, vector<float>* local_values, int local_size, i
     // CALI_MARK_END("Selection Sort");
 
     // Gather the sorted values from all processes to process rank 0
-    MPI_Gather(selected, NUM_VALS, MPI_FLOAT, selected, NUM_VALS, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Gather(selected, NUM_VALS, MPI_FLOAT, gatheredArray, NUM_VALS, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
     if (rank == 0) {
         printf("\nThis is the sorted array: ");
         for (int c = 0; c < NUM_VALS; c++) {
             if (c % num_procs == 0)
                 printf("\n");
-            printf("%3f ", selected[c]);
+            printf("%3f ", gatheredArray[c]);
         }
         printf("\n");
         printf("\n");
@@ -121,6 +123,11 @@ void selection_sort(int NUM_VALS, vector<float>* local_values, int local_size, i
 
     free(selectionArrayA);
     free(selectionArrayB);
+
+    if (rank == 0) {
+        free(selected);
+        free(gatheredArray);
+    }
 
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Finalize();
