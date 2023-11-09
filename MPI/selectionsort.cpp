@@ -56,7 +56,7 @@ void selection_sort(int NUM_VALS, vector<float> *local_values, int local_size, i
 
     MPI_Barrier(MPI_COMM_WORLD);
 
-    for (int a = 0; a < n; a++) {
+    for (int a = 0; a < NUM_VALS; a++) {
         smallestProcess = 0;
 
         if (rank == 0) {
@@ -110,7 +110,7 @@ void selection_sort(int NUM_VALS, vector<float> *local_values, int local_size, i
 
     if (rank == 0) {    
         printf("\nThis is the sorted array: ");
-        for (int c = 0; c < n; c++) {
+        for (int c = 0; c < NUM_VALS; c++) {
             if (c % num_procs == 0)
                 printf("\n");
             printf("%3f ", selected[c]);
