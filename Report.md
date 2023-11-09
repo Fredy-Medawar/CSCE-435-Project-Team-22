@@ -22,6 +22,119 @@ Performance of different implementations of different sorting algorithms in MPI 
 
 ## 2. Pseudocode
 
+### Selection Sort (MPI):
+
+Function smallest(a, b, c) -> int
+    Initialize temp to b
+    For x from b + 1 to c - 1 do
+        a[temp] > a[x] then
+            Set temp to x
+    end for
+    Swap a[temp] and a[b]
+    Return a[b]
+End Function
+
+Function selection_sort(NUM_VALS: int, local_values: vector of float, local_size: int, num_procs: int, rank: int, sample_size: int)
+    CALI_MARK_BEGIN(SELECTION_SORT_NAME)
+
+    Initialize selectionArrayA as an array of float with size sample_size
+
+    If rank is 0 then
+        Initialize a random number generator with a seed of time(NULL) + rank
+        Print "This is the unsorted array: "
+        For i from 0 to NUM_VALS - 1 do
+            Generate a random sampleIndex between 0 and local_size - 1
+            Set selectionArrayA[i] to local_values[sampleIndex]
+        End For
+    End If
+
+    Initialize size as NUM_VALS divided by num_procs
+
+    Initialize selected as an array of float or null
+    Initialize smallestValue to 0
+    Initialize smallestInProcess
+
+    If rank is 0 then
+        Allocate memory for selected to store NUM_VALS float values
+
+    Initialize selectionArrayB as an array of float with size NUM_VALS
+
+    Call MPI_Scatter on arrayA to array B transferring size elements of type float
+    Call smallest function to calculate smallestInProcess on array B
+
+    Initialize smallestProcess to 0
+    Initialize startPoint to 0
+    Initialize isNull to 0
+
+    MPI_Barrier(world comm)
+
+    For a from 0 to NUM_VALS - 1 do
+        Set smallestProcess to 0
+
+        If rank is 0 then
+            If not isNull then
+                Set smallestValue to smallestInProcess
+            Else
+                Set smallestValue to 150
+            End If
+        End If
+
+        For b from 1 to num_procs - 1 do
+            If rank is 0 then
+                Initialize receive as an integer
+                MPI_Recv(receive, 1, MPI_INT, b, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE)
+                If receive is not equal to 150 then
+                    If receive is less than smallestValue then
+                        Set smallestValue to receive
+                        Set smallestProcess to b
+                    End If
+                End If
+            Else If rank is b then
+                If not isNull then
+                    MPI_Send(smallestInProcess, 1, MPI_INT, 0, 0, MPI_COMM_WORLD)
+                Else
+                    Set x to 69  // Replace 69 with meaningful data
+                    MPI_Send(x, 1, MPI_INT, 0, 0, MPI_COMM_WORLD)
+                End If
+            End If
+        End For
+
+        Broadcast data from root process to all processes in world comm
+        MPI_Barrier(world comm)
+
+        If rank is 0 then
+            Set selected[a] to smallestValue
+        End If
+
+        If rank is smallestProcess then
+            Increment startPoint
+            Set smallestInProcess to smallest(selectionArrayB, startPoint, size)
+            If startPoint is greater than size - 1 then
+                Set isNull to 1
+            End If
+        End If
+    End For
+
+    If rank is 0 then
+        Print "This is the sorted array: "
+        For c from 0 to NUM_VALS - 1 do
+            If c is a multiple of num_procs then
+                Print a newline
+            End If
+            Print selected[c] with formatting
+        End For
+        Print two newlines
+    End If
+
+    Free memory for selectionArrayA and selectionArrayB
+
+    MPI_Barrier(world comm)
+    MPI_Finalize()
+
+    CALI_MARK_END(SELECTION_SORT_NAME)
+End Function
+
+
 ### Sample Sort (MPI):
     sample_sort(NUM_VALS, list local_values, local_size, num_procs, rank, sample_size)
       for i = 0 to local_size
