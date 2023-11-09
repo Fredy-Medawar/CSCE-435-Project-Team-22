@@ -1,9 +1,5 @@
 #include "common.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <cuda_runtime.h>
-
 __global__ void selection_sort_step(float *dev_values, unsigned int* partitionBegin, unsigned int* partitionEnd)
 {
     unsigned int start = partitionBegin[threadIdx.x];
