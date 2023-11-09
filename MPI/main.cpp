@@ -197,7 +197,7 @@ int main(int argc, char* argv[])
     if (sort_alg == 0) {
         sample_sort(NUM_VALS, &local_values, local_size, num_procs, rank, 10);
     } else if (sort_alg == 1) {
-        //selection_sort(NUM_VALS, &local_values, local_size, num_procs, rank, 10);
+        selection_sort(NUM_VALS, &local_values, local_size, num_procs, rank);
     } else if (sort_alg == 2) {
         //selection_sort(NUM_VALS, &local_values, local_size, num_procs, rank, 10);
         oddeven_sort(NUM_VALS, &local_values, local_size, num_procs, rank);
