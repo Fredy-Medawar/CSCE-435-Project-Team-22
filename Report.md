@@ -180,6 +180,112 @@ End Function
 
 
 
+
+
+### Mergesort
+    merge(arr, start, mid, end)
+      treat start-mid and mid+1 - end as seperate lists
+      parse through the lists putting the smaller value first
+      after parsing is completely, fill the rest of the array with any leftover values
+      
+    mergesort(arr, start, end):
+        if start > end 
+            return
+        set mid = (start+end)/2
+        mergeSort(arr, start, mid)
+        mergeSort(arr, mid+1, end)
+        merge(arr, start, mid, end)
+
+### Samplesort
+    sample_sort(size, local values, local size, num procs, sample_size)
+      create list local values list on each process
+
+      create list sample of size sample_size
+
+      find splitters by sampling random values in local values
+
+      determine cutoff based on sample and add to list of cutoffs
+
+      send determined cutoffs to other processess
+      receive cutoffs from other processess
+
+      sequentially sort cuttoffs
+
+      create lists of values by comparing to cutoffs and add to send buffers
+      send buffers to all other processess
+      receive buffers from all other processess and append to local values
+      
+      sequentially sort local values
+
+### Bitonic Sort:
+    bitonic_sort_step(device values, j, k)
+      i = index of the current thread + number of threads per block + the index of the current block
+      ixj = i^j
+
+      if ixj > i
+        if i&k==0
+          if device values at i > device values at ixj
+            swap(i,ixj)
+
+      if i&k!=0
+        if device values at i < device values at ixj
+          swap(i,ixj)
+
+    bitonic_sort(values, device values, size, threads)
+      copy values from host to device as device values
+
+      blocks = size/threads
+      for k = 2 to size, double k each iteration
+        for j = half k to 0, halve k each iteration
+          bitonic_sort_step(device values, j, k) call to device code
+
+      copy device values from device to host as values
+
+## 3. _due 11/08_ Pseudocode for each algorithm and implementation
+### Mergesort (MPI)
+    mergesort() (pseudocode in section 2)
+        
+    MPImergesort(arr, num_vals, num_procs)
+        generate a binary tree with a leaf for every process, so that the root has value zero and for every parent, one child has the same value as the parent and one child has a new value
+        node thisProcsLeaf = searchForLeaf(rank)
+        destList = walkUpTree(thisProcsLeaf) 
+        set work = 1
+        set local_size = num_vals / num_procs
+        while work == 1:
+            mergesort(local_values)
+            nextDest = destList.pop()
+            if(nextDest == rank)
+                receive a message from another processor sending this process data
+                combined_vals = her_vals + local_vals
+                mergesort(combined_vals, 0, local_size * 2)
+                local_vals = combined_vals
+            else
+                send our sorted local data to the processor with rank == nextDest
+                work = 0 (this process does no more computation)
+
+            if(destList.empty())
+                work = 0 (the root process has finished sorting the array)
+### Mergesort (CUDA)
+    mergesort() (pseudocode in section 2)
+    
+    CUDAmergesortStep(arr, num_vals, sectionWidth)
+        set start = sectionWidth * threadID
+        set end = left + sectionWidth
+        mergesort(arr, start, end)
+
+    CUDAmergesort(arr, num_vals, num_threads, num_blocks)
+        set sliceWidth = 2
+        set threadsToUse = num_threads
+        if(threadsToUse > num_vals / sliceWidth)
+            threadsToUse = num_vals / sliceWidth
+        if(threadsToUse < num_vals / sliceWidth)
+            sliceWidth = num_vals / threadsToUse
+        forever
+            CUDAMergesortStep<<<num_blocks, threadsToUse>>>(arr, num_vals, sliceWidth)
+            if(threadsToUse == 1)
+                break
+            sliceWidth *= 2
+            threadsToUse /= 2
 ### Sample Sort (MPI):
     sample_sort(NUM_VALS, list local_values, local_size, num_procs, rank, sample_size)
       for i = 0 to local_size
@@ -245,8 +351,6 @@ End Function
           receive recv_buf[i] from rank i into local_values
 
       sequentially sort local_values
-
-
 ### Bitonic Sort (CUDA):
     bitonic_sort_step(dev_values, j, k)
       i = threadIdx.x + blockDim.x * blockIdx.x
@@ -254,7 +358,7 @@ End Function
 
       if ixj>i
         if i&k==0
-          if dev_values[i] dev_values[ixj]
+          if dev_values[i]>dev_values[ixj]
             exchange(i,ixj)
 
       if i&k!=0
@@ -270,67 +374,6 @@ End Function
           bitonic_sort_step(dev_values, j, k) call to device code
 
       copy dev_values from device to host
-
-### Mergesort
-    merge(arr, start, mid, end)
-      treat start-mid and mid+1 - end as seperate lists
-      parse through the lists putting the smaller value first
-      after parsing is completely, fill the rest of the array with any leftover values
-      
-    mergesort(arr, start, end):
-        if start > end 
-            return
-        set mid = (start+end)/2
-        mergeSort(arr, start, mid)
-        mergeSort(arr, mid+1, end)
-        merge(arr, start, mid, end)
-          
-## 3. _due 11/08_ Pseudocode for each algorithm and implementation
-### Mergesort (MPI)
-    mergesort() (pseudocode in section 2)
-        
-    MPImergesort(arr, num_vals, num_procs)
-        generate a binary tree with a leaf for every process, so that the root has value zero and for every parent, one child has the same value as the parent and one child has a new value
-        node thisProcsLeaf = searchForLeaf(rank)
-        destList = walkUpTree(thisProcsLeaf) 
-        set work = 1
-        set local_size = num_vals / num_procs
-        while work == 1:
-            mergesort(local_values)
-            nextDest = destList.pop()
-            if(nextDest == rank)
-                receive a message from another processor sending this process data
-                combined_vals = her_vals + local_vals
-                mergesort(combined_vals, 0, local_size * 2)
-                local_vals = combined_vals
-            else
-                send our sorted local data to the processor with rank == nextDest
-                work = 0 (this process does no more computation)
-
-            if(destList.empty())
-                work = 0 (the root process has finished sorting the array)
-### Mergesort (CUDA)
-    mergesort() (pseudocode in section 2)
-    
-    CUDAmergesortStep(arr, num_vals, sectionWidth)
-        set start = sectionWidth * threadID
-        set end = left + sectionWidth
-        mergesort(arr, start, end)
-
-    CUDAmergesort(arr, num_vals, num_threads, num_blocks)
-        set sliceWidth = 2
-        set threadsToUse = num_threads
-        if(threadsToUse > num_vals / sliceWidth)
-            threadsToUse = num_vals / sliceWidth
-        if(threadsToUse < num_vals / sliceWidth)
-            sliceWidth = num_vals / threadsToUse
-        forever
-            CUDAMergesortStep<<<num_blocks, threadsToUse>>>(arr, num_vals, sliceWidth)
-            if(threadsToUse == 1)
-                break
-            sliceWidth *= 2
-            threadsToUse /= 2
-        
 
 ## 3. _due 11/08_ Evaluation plan - what and how will you measure and compare
 
