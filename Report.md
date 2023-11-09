@@ -359,6 +359,29 @@ End Function
                 work = 0 (the root process has finished sorting the array)
 
 
+
+### Mergesort (CUDA)
+    mergesort() (pseudocode in section 2)
+    
+    CUDAmergesortStep(arr, num_vals, sectionWidth)
+        set start = sectionWidth * threadID
+        set end = left + sectionWidth
+        mergesort(arr, start, end)
+
+    CUDAmergesort(arr, num_vals, num_threads, num_blocks)
+        set sliceWidth = 2
+        set threadsToUse = num_threads
+        if(threadsToUse > num_vals / sliceWidth)
+            threadsToUse = num_vals / sliceWidth
+        if(threadsToUse < num_vals / sliceWidth)
+            sliceWidth = num_vals / threadsToUse
+        forever
+            CUDAMergesortStep<<<num_blocks, threadsToUse>>>(arr, num_vals, sliceWidth)
+            if(threadsToUse == 1)
+                break
+            sliceWidth *= 2
+            threadsToUse /= 2
+
 ### Odd even sort (CUDA)
 ```
   function oddeven(data):
@@ -407,27 +430,6 @@ End Function
       
       MPI_BARRIER
 ```
-### Mergesort (CUDA)
-    mergesort() (pseudocode in section 2)
-    
-    CUDAmergesortStep(arr, num_vals, sectionWidth)
-        set start = sectionWidth * threadID
-        set end = left + sectionWidth
-        mergesort(arr, start, end)
-
-    CUDAmergesort(arr, num_vals, num_threads, num_blocks)
-        set sliceWidth = 2
-        set threadsToUse = num_threads
-        if(threadsToUse > num_vals / sliceWidth)
-            threadsToUse = num_vals / sliceWidth
-        if(threadsToUse < num_vals / sliceWidth)
-            sliceWidth = num_vals / threadsToUse
-        forever
-            CUDAMergesortStep<<<num_blocks, threadsToUse>>>(arr, num_vals, sliceWidth)
-            if(threadsToUse == 1)
-                break
-            sliceWidth *= 2
-            threadsToUse /= 2
 
 ## 3. _due 11/08_ Evaluation plan - what and how will you measure and compare
 
