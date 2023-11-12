@@ -17,6 +17,7 @@ void sample_sort(int NUM_VALS, vector<float> *local_values, int local_size, int 
 {
     CALI_MARK_BEGIN(SAMPLE_SORT_NAME);
 
+    CALI_MARK_BEGIN(SAMPLE_SORT_COMP);
     int start = rank * local_size;
     int end = start + local_size - 1;
 
@@ -44,7 +45,9 @@ void sample_sort(int NUM_VALS, vector<float> *local_values, int local_size, int 
     }
 
     free(sample);
+    CALI_MARK_END(SAMPLE_SORT_COMP);
 
+    CALI_MARK_BEGIN(SAMPLE_SORT_COMM);
     // Send cutoffs to other processes and recieve cutoffs from other processes
     vector<float> cutoffs;
     for (int i = 0; i < num_procs; i++)
@@ -62,7 +65,10 @@ void sample_sort(int NUM_VALS, vector<float> *local_values, int local_size, int 
             cutoffs.push_back(cutoff);
         }
     }
+    CALI_MARK_END(SAMPLE_SORT_COMM);
 
+
+    CALI_MARK_BEGIN(SAMPLE_SORT_COMP);
     std::sort(cutoffs.begin(), cutoffs.end());
 
     // Populate cutoff pairs with corresponding values and ranks
@@ -170,7 +176,10 @@ void sample_sort(int NUM_VALS, vector<float> *local_values, int local_size, int 
             MPI_Barrier(MPI_COMM_WORLD);
         }
     }
+    CALI_MARK_END(SAMPLE_SORT_COMP);
 
+
+    CALI_MARK_BEGIN(SAMPLE_SORT_COMM);
     // Send send buffs to other processes and recieve from other processes
     for (int i = 0; i < num_procs; i++)
     {
@@ -191,20 +200,13 @@ void sample_sort(int NUM_VALS, vector<float> *local_values, int local_size, int 
 
             MPI_Recv(receive_bufs[i].data(), recv_vector_size, MPI_FLOAT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             local_values->insert(local_values->end(), receive_bufs[i].begin(), receive_bufs[i].end());
-
-            // if (vector_size != 0) 
-            // {
-            //     printf("Rank %d received %d values from process %d\n\t", rank, vector_size, i);
-            //     for (const float element : receive_bufs[i]) 
-            //     {
-            //         printf("%f, ", element);
-            //     }
-            //     printf("\n");
-            // }
         }
     }
+    CALI_MARK_END(SAMPLE_SORT_COMM);
 
+    CALI_MARK_BEGIN(SAMPLE_SORT_COMP);
     std::sort(local_values->begin(), local_values->end());
+    CALI_MARK_END(SAMPLE_SORT_COMP);
 
     // local_values = local_buf;
 
