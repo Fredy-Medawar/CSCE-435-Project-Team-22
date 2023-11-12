@@ -12,7 +12,7 @@
     $ . make
 
     Run the batch file, giving array size, number of processors, 
-    array fill type (0 for random, 1 for sorted, 2 for reverse sorted),
+    array fill type (0 for random, 1 for sorted, 2 for reverse sorted, 3 for sorted with 1% perturbed),
     and the sorting algorithm to run (0 for sample)
     $ sbatch project.grace_job <a> <p> <t> <s>
 

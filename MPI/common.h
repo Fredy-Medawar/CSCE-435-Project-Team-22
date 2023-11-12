@@ -8,9 +8,9 @@
 #include <time.h>
 #include <vector>
 
-//#include <caliper/cali.h>
-//#include <caliper/cali-manager.h>
-//#include <adiak.hpp>
+#include <caliper/cali.h>
+#include <caliper/cali-manager.h>
+#include <adiak.hpp>
 
 using namespace std;
 
@@ -20,6 +20,9 @@ using namespace std;
 #define SORT_CHECK_NAME "sort_check"
 #define SAMPLE_SORT_NAME "sample_sort"
 #define SELECTION_SORT_NAME "selection_sort"
+
+#define SAMPLE_SORT_COMM "sample_sort_communication"
+#define SAMPLE_SORT_COMP "sample_sort_computation"
 
 void sample_sort(int NUM_VALS, vector<float> *local_values, int local_size, int num_procs, int rank, int sample_size);
 void selection_sort(int NUM_VALS, vector<float> *local_values, int local_size, int num_procs, int rank);

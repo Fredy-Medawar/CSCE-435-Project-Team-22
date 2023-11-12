@@ -2,7 +2,7 @@
 
 void parallel_array_fill(int NUM_VALS, vector<float> *local_values, int local_size, int num_procs, int rank, int array_fill_type)
 {
-    //CALI_MARK_BEGIN(ARRAY_FILL_NAME);
+    CALI_MARK_BEGIN(ARRAY_FILL_NAME);
     int start = rank * local_size;
     int end = start + local_size - 1;
 
@@ -28,10 +28,26 @@ void parallel_array_fill(int NUM_VALS, vector<float> *local_values, int local_si
     {
         for (int i = 0; i < local_size; ++i) 
         {
-            local_values->push_back(NUM_VALS - end - i);
+            local_values->push_back(NUM_VALS - end - i + local_size - 1);
         }
     }
-    //CALI_MARK_END(ARRAY_FILL_NAME);
+    else if (array_fill_type == 3)
+    {
+        srand(time(NULL) + rank);
+        for (int i = 0; i < local_size; ++i) 
+        {
+            int val = 1 + rand() % 100;
+            if (val > 1)
+            {
+                local_values->push_back(start + i);
+            }
+            else
+            {
+                local_values->push_back((float)rand() / (float)RAND_MAX);
+            }
+        }
+    }
+    CALI_MARK_END(ARRAY_FILL_NAME);
 }
 
 bool sort_check(vector<float> local_values, int local_size)
@@ -48,7 +64,7 @@ bool sort_check(vector<float> local_values, int local_size)
 
 void parallel_sort_check_merged(int NUM_VALS, float *values, vector<float> local_values, int local_size, int num_procs, int rank)
 {
-    //CALI_MARK_BEGIN(SORT_CHECK_NAME);
+    CALI_MARK_BEGIN(SORT_CHECK_NAME);
     int start = rank * local_size;
     int end = start + local_size - 1;
 
@@ -87,17 +103,14 @@ void parallel_sort_check_merged(int NUM_VALS, float *values, vector<float> local
             printf("The entire array is not sorted.");
         }
     }
-    //CALI_MARK_END(SORT_CHECK_NAME);
+    CALI_MARK_END(SORT_CHECK_NAME);
 }
 
 void parallel_sort_check_unmerged(int NUM_VALS, vector<float> local_values, int local_size, int num_procs, int rank)
 {
-    //CALI_MARK_BEGIN(SORT_CHECK_NAME);
+    CALI_MARK_BEGIN(SORT_CHECK_NAME);
     int start = rank * local_size;
     int end = start + local_size - 1;
-
-    // Print process segment of array
-    // printf("rank: %d, start: %d, end: %d, local_size:%d\n", rank, start, end, local_size);
 
     MPI_Request request;
     if (rank != 0)
@@ -143,7 +156,7 @@ void parallel_sort_check_unmerged(int NUM_VALS, vector<float> local_values, int 
             printf("The entire array is not sorted.");
         }
     }
-    //CALI_MARK_END(SORT_CHECK_NAME);
+    CALI_MARK_END(SORT_CHECK_NAME);
 }
 
 void printArray(int NUM_VALS, float *values, vector<float> local_values, int local_size, int num_procs, int rank)
@@ -163,7 +176,7 @@ void printArray(int NUM_VALS, float *values, vector<float> local_values, int loc
 
 int main(int argc, char* argv[]) 
 {
-    //CALI_CXX_MARK_FUNCTION;
+    CALI_CXX_MARK_FUNCTION;
 
     int NUM_VALS = atoi(argv[1]);
     int array_fill_type = atoi(argv[2]);
@@ -173,6 +186,10 @@ int main(int argc, char* argv[])
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
+
+    // Create caliper ConfigManager object
+    cali::ConfigManager mgr;
+    mgr.start();
 
     // Initialize values to be sorted 
     float *values = (float *)malloc(NUM_VALS * sizeof(float));
@@ -199,7 +216,6 @@ int main(int argc, char* argv[])
     } else if (sort_alg == 1) {
         selection_sort(NUM_VALS, &local_values, local_size, num_procs, rank);
     } else if (sort_alg == 2) {
-        //selection_sort(NUM_VALS, &local_values, local_size, num_procs, rank, 10);
         oddeven_sort(NUM_VALS, &local_values, local_size, num_procs, rank);
     }
 
@@ -208,6 +224,28 @@ int main(int argc, char* argv[])
     parallel_sort_check_unmerged(NUM_VALS, local_values, local_size, num_procs, rank);
 
     free(values);
+
+    adiak::init(NULL);
+    adiak::user();
+    adiak::launchdate();
+    adiak::libraries();
+    adiak::cmdline();
+    adiak::clustername();
+    adiak::value("num_procs", num_procs);
+    adiak::value("array_size", NUM_VALS);
+    adiak::value("array_datatype_size", sizeof(float));
+
+    if (array_fill_type == 0) adiak::value("array_fill_type", "random");
+    else if (array_fill_type == 1) adiak::value("array_fill_type", "sorted");
+    else if (array_fill_type == 2) adiak::value("array_fill_type", "reverse_sorted");
+    else if (array_fill_type == 3) adiak::value("array_fill_type", "sorted_1%_perturbed");
+
+    if (sort_alg == 0) adiak::value("sort_alg", "sample_sort");
+    else if (sort_alg == 1) adiak::value("sort_alg", "selection_sort");
+    else if (sort_alg == 2) adiak::value("sort_alg", "oddeven_sort");
+
+    mgr.stop();
+    mgr.flush();
 
     MPI_Finalize();
     return 0;
