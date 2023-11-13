@@ -47,6 +47,8 @@ void bitonic_sort(float *values, float* dev_values, int NUM_VALS, int THREADS, i
   
   // Start event
   //CALI_MARK_BEGIN(bitonic_sort_step_region);
+  CALI_MARK_BEGIN(COMP);
+  CALI_MARK_BEGIN(COMP_LARGE);
 
   int j, k;
   /* Major step */
@@ -59,5 +61,7 @@ void bitonic_sort(float *values, float* dev_values, int NUM_VALS, int THREADS, i
 
   // End Event
   cudaDeviceSynchronize();
+  CALI_MARK_END(COMP_LARGE);
+  CALI_MARK_END(COMP);
   //CALI_MARK_END(bitonic_sort_step_region);
 }

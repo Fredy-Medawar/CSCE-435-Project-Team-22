@@ -231,18 +231,22 @@ int main(int argc, char* argv[])
     adiak::libraries();
     adiak::cmdline();
     adiak::clustername();
-    adiak::value("num_procs", num_procs);
-    adiak::value("array_size", NUM_VALS);
-    adiak::value("array_datatype_size", sizeof(float));
 
-    if (array_fill_type == 0) adiak::value("array_fill_type", "random");
-    else if (array_fill_type == 1) adiak::value("array_fill_type", "sorted");
-    else if (array_fill_type == 2) adiak::value("array_fill_type", "reverse_sorted");
-    else if (array_fill_type == 3) adiak::value("array_fill_type", "sorted_1%_perturbed");
+    adiak::value("ProgrammingModel", "MPI"); // e.g., "MPI", "CUDA", "MPIwithCUDA"
+    adiak::value("Datatype", "float"); // The datatype of input elements (e.g., double, int, float)
+    adiak::value("SizeOfDatatype", sizeof(float)); // sizeof(datatype) of input elements in bytes (e.g., 1, 2, 4)
+    adiak::value("InputSize", NUM_VALS); // The number of elements in input dataset (1000)
+    adiak::value("num_procs", num_procs); // The number of processors (MPI ranks)
+    adiak::value("group_num", 22); // The number of your group (integer, e.g., 1, 10)
 
-    if (sort_alg == 0) adiak::value("sort_alg", "sample_sort");
-    else if (sort_alg == 1) adiak::value("sort_alg", "selection_sort");
-    else if (sort_alg == 2) adiak::value("sort_alg", "oddeven_sort");
+    if (array_fill_type == 0) adiak::value("InputType", "random");
+    else if (array_fill_type == 1) adiak::value("InputType", "sorted");
+    else if (array_fill_type == 2) adiak::value("InputType", "reverse_sorted");
+    else if (array_fill_type == 3) adiak::value("InputType", "sorted_1%_perturbed");
+
+    if (sort_alg == 0) adiak::value("Algorithm", "SampleSort");
+    else if (sort_alg == 1) adiak::value("Algorithm", "SelectionSort");
+    else if (sort_alg == 2) adiak::value("Algorithm", "OddevenSort");
 
     mgr.stop();
     mgr.flush();

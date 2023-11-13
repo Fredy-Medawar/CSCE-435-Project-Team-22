@@ -15,9 +15,10 @@ int compare_float(const void* a, const void* b) {
 
 void sample_sort(int NUM_VALS, vector<float> *local_values, int local_size, int num_procs, int rank, int sample_size)
 {
-    CALI_MARK_BEGIN(SAMPLE_SORT_NAME);
+    // CALI_MARK_BEGIN(SAMPLE_SORT_NAME);
 
-    CALI_MARK_BEGIN(SAMPLE_SORT_COMP);
+    CALI_MARK_BEGIN(COMP);
+    CALI_MARK_BEGIN(COMP_SMALL);
     int start = rank * local_size;
     int end = start + local_size - 1;
 
@@ -45,9 +46,11 @@ void sample_sort(int NUM_VALS, vector<float> *local_values, int local_size, int 
     }
 
     free(sample);
-    CALI_MARK_END(SAMPLE_SORT_COMP);
+    CALI_MARK_END(COMP_SMALL);
+    CALI_MARK_END(COMP);
 
-    CALI_MARK_BEGIN(SAMPLE_SORT_COMM);
+    CALI_MARK_BEGIN(COMM);
+    CALI_MARK_BEGIN(COMM_SMALL);
     // Send cutoffs to other processes and recieve cutoffs from other processes
     vector<float> cutoffs;
     for (int i = 0; i < num_procs; i++)
@@ -65,10 +68,12 @@ void sample_sort(int NUM_VALS, vector<float> *local_values, int local_size, int 
             cutoffs.push_back(cutoff);
         }
     }
-    CALI_MARK_END(SAMPLE_SORT_COMM);
+    CALI_MARK_END(COMM_SMALL);
+    CALI_MARK_END(COMM);
 
 
-    CALI_MARK_BEGIN(SAMPLE_SORT_COMP);
+    CALI_MARK_BEGIN(COMP);
+    CALI_MARK_BEGIN(COMP_LARGE);
     std::sort(cutoffs.begin(), cutoffs.end());
 
     // Populate cutoff pairs with corresponding values and ranks
@@ -176,10 +181,12 @@ void sample_sort(int NUM_VALS, vector<float> *local_values, int local_size, int 
             MPI_Barrier(MPI_COMM_WORLD);
         }
     }
-    CALI_MARK_END(SAMPLE_SORT_COMP);
+    CALI_MARK_END(COMP_LARGE);
+    CALI_MARK_END(COMP);
 
 
-    CALI_MARK_BEGIN(SAMPLE_SORT_COMM);
+    CALI_MARK_BEGIN(COMM);
+    CALI_MARK_BEGIN(COMM_LARGE);
     // Send send buffs to other processes and recieve from other processes
     for (int i = 0; i < num_procs; i++)
     {
@@ -202,11 +209,14 @@ void sample_sort(int NUM_VALS, vector<float> *local_values, int local_size, int 
             local_values->insert(local_values->end(), receive_bufs[i].begin(), receive_bufs[i].end());
         }
     }
-    CALI_MARK_END(SAMPLE_SORT_COMM);
+    CALI_MARK_END(COMM_LARGE);
+    CALI_MARK_END(COMM);
 
-    CALI_MARK_BEGIN(SAMPLE_SORT_COMP);
+    CALI_MARK_BEGIN(COMP);
+    CALI_MARK_BEGIN(COMP_LARGE);
     std::sort(local_values->begin(), local_values->end());
-    CALI_MARK_END(SAMPLE_SORT_COMP);
+    CALI_MARK_END(COMP_LARGE);
+    CALI_MARK_END(COMP);
 
     // local_values = local_buf;
 
@@ -230,5 +240,5 @@ void sample_sort(int NUM_VALS, vector<float> *local_values, int local_size, int 
         }
     }
 
-    CALI_MARK_END(SAMPLE_SORT_NAME);
+    // CALI_MARK_END(SAMPLE_SORT_NAME);
 }

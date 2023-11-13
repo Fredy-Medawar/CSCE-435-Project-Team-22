@@ -95,6 +95,8 @@ int main(int argc, char *argv[])
     //MEM COPY FROM HOST TO DEVICE
 
     // Start host to device event
+    CALI_MARK_BEGIN(COMM);
+    CALI_MARK_BEGIN(COMM_LARGE);
     CALI_MARK_BEGIN(cudaMemcpy_host_to_device);
 
     cudaMemcpy(dev_values, values, size, cudaMemcpyHostToDevice);
@@ -103,6 +105,8 @@ int main(int argc, char *argv[])
     // End  host to device Event
     cudaDeviceSynchronize();
     CALI_MARK_END(cudaMemcpy_host_to_device);
+    CALI_MARK_END(COMM_LARGE);
+    CALI_MARK_END(COMM);
 
     // Start Array Fill Event
     CALI_MARK_BEGIN(array_fill_name);
@@ -131,6 +135,8 @@ int main(int argc, char *argv[])
     //MEM COPY FROM DEVICE TO HOST
 
     // Start device to host event
+    CALI_MARK_BEGIN(COMM);
+    CALI_MARK_BEGIN(COMM_LARGE);
     CALI_MARK_BEGIN(cudaMemcpy_device_to_host);
 
     cudaMemcpy(values, dev_values, size, cudaMemcpyDeviceToHost);
@@ -139,6 +145,8 @@ int main(int argc, char *argv[])
     // End device to host Event
     cudaDeviceSynchronize();
     CALI_MARK_END(cudaMemcpy_device_to_host);
+    CALI_MARK_END(COMM_LARGE);
+    CALI_MARK_END(COMM);
 
     cudaFree(dev_values);
 
@@ -157,19 +165,23 @@ int main(int argc, char *argv[])
     adiak::libraries();
     adiak::cmdline();
     adiak::clustername();
-    adiak::value("num_threads", THREADS);
-    adiak::value("num_blocks", BLOCKS);
-    adiak::value("num_vals", NUM_VALS);
-    adiak::value("datatype_size", sizeof(float));
 
-    if (array_fill_type == 0) adiak::value("array_fill_type", "random");
-    else if (array_fill_type == 1) adiak::value("array_fill_type", "sorted");
-    else if (array_fill_type == 2) adiak::value("array_fill_type", "reverse_sorted");
-    else if (array_fill_type == 3) adiak::value("array_fill_type", "sorted_1%_perturbed");
+    adiak::value("ProgrammingModel", "CUDA"); // e.g., "MPI", "CUDA", "MPIwithCUDA"
+    adiak::value("Datatype", "float"); // The datatype of input elements (e.g., double, int, float)
+    adiak::value("SizeOfDatatype", sizeof(float)); // sizeof(datatype) of input elements in bytes (e.g., 1, 2, 4)
+    adiak::value("num_threads", THREADS); // The number of CUDA or OpenMP threads
+    adiak::value("num_blocks", BLOCKS); // The number of CUDA blocks 
+    adiak::value("group_num", 22); // The number of your group (integer, e.g., 1, 10)
 
-    if (sort_alg == 0) adiak::value("sort_alg", "bitonic_sort");
-    else if (sort_alg == 1) adiak::value("sort_alg", "oddeven_sort");
-    else if (sort_alg == 2) adiak::value("sort_alg", "selection_sort");
+
+    if (array_fill_type == 0) adiak::value("InputType", "random");
+    else if (array_fill_type == 1) adiak::value("InputType", "sorted");
+    else if (array_fill_type == 2) adiak::value("InputType", "reverse_sorted");
+    else if (array_fill_type == 3) adiak::value("InputType", "sorted_1%_perturbed");
+
+    if (sort_alg == 0) adiak::value("Algorithm", "bitonic_sort");
+    else if (sort_alg == 1) adiak::value("Algorithm", "oddeven_sort");
+    else if (sort_alg == 2) adiak::value("Algorithm", "selection_sort");
 
     array_print(values, NUM_VALS);
 
