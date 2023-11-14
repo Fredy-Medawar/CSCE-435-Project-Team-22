@@ -4,7 +4,7 @@ find_package(MPI REQUIRED)
 find_package(caliper REQUIRED)
 find_package(adiak REQUIRED)
 
-add_executable(project main.cpp samplesort.cpp oddeven.cpp selectionsort.cpp)
+add_executable(project main.cpp samplesort.cpp oddeven.cpp selectionsort.cpp mergesort.cpp)
 
 message(STATUS "MPI includes : ${MPI_INCLUDE_PATH}")
 message(STATUS "Caliper includes : ${caliper_INCLUDE_DIR}")
