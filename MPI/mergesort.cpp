@@ -1,64 +1,6 @@
-#include "mpi.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <limits.h>
-
-#include <caliper/cali.h>
-#include <caliper/cali-manager.h>
-#include <adiak.hpp>
-
-#include <algorithm>
-#include <cmath>
-#include <vector>
-#include <string>
-
-const char* array_fill_name = "array_fill";
-const char* sort_check_name = "sort_check";
-const char* MPI_mergesort = "MPI_mergesort";
+#include "common.h"
 
 using namespace std;
-
-void parallel_array_fill(int NUM_VALS, float *values, int num_procs, int rank)
-{
-    CALI_MARK_BEGIN(array_fill_name);
-    
-    // Calculate local size based on rank and array size
-    int local_size = NUM_VALS / num_procs;
-    int start = rank * local_size;
-    int end = (rank == num_procs - 1) ? NUM_VALS : start + local_size;
-
-    local_size = end - start;
-
-    // Print process segment of array
-    //printf("start: %d, end: %d, local_size:%d\n", start, end, local_size);
-
-    float *local_values = (float *)malloc(local_size * sizeof(float));
-
-    for (int i = 0; i < local_size; ++i) 
-    {
-        local_values[i] = (float)rand() / (float)RAND_MAX;
-        //printf("Check value for %d : %.6f\n",i, local_values[i]);
-    }
-
-    // Gather local portions into global array
-    MPI_Gather(local_values, local_size, MPI_FLOAT, values, local_size, MPI_FLOAT, 0, MPI_COMM_WORLD);
-
-    free(local_values);
-
-    CALI_MARK_END(array_fill_name);
-}
-
-bool sort_check(float *local_values, int local_size)
-{
-    for (int i = 1; i < local_size; i++)
-    {
-        if (local_values[i - 1] > local_values[i]) 
-        {
-            return false;
-        }
-    }
-    return true;
-}
 
 //merge two arrays so that if the two arrays were sorted, the returning array will be sorted
 void merge(float *values, int left, int mid, int right)
@@ -113,22 +55,6 @@ void mergesort(float *values, int left, int right)
     mergesort(values, left, mid);
     mergesort(values, mid + 1, right);
     merge(values, left, mid, right);
-  }
-}
-
-void combineArrays(float *a, int lenA, float *b, int lenB, float *c, int &lenC)
-{
-  lenC = lenA + lenB;
-  c = (float *)malloc(lenC * sizeof(float));
-  for(int i = 0; i < lenA; i++) {
-    c[i] = a[i];
-    printf("Adding to c... %.6f\n", a[i]);
-    printf("c[i]... %.6f\n", c[i]);
-  }
-  for(int i = 0; i < lenB; i++) {
-    c[i+lenA] = b[i];
-    printf("Adding to c... %.6f\n", b[i]);
-    printf("c[i+lenA]... %.6f\n", c[i+lenA]);
   }
 }
 
@@ -211,24 +137,9 @@ string stepUpTree(node* n, string ret) {
 
 }
 
-void parallelMergesort(int NUM_VALS, float *values, int num_procs)
+//mergesort(NUM_VALS, values, num_procs, rank);
+void mergesort(int NUM_VALS, float* local_values, int local_size, int num_procs, int rank)
 { 
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-  // Calculate local size based on rank and array size
-  int local_size = NUM_VALS / num_procs;
-  int start = rank * local_size;
-  int end = (rank == num_procs - 1) ? NUM_VALS : start + local_size;
-
-  local_size = end - start;
-
-  float* local_values = (float*)malloc(local_size * sizeof(float));
-
-  // Scatter the array among processors
-  MPI_Scatter(values, local_size, MPI_FLOAT, local_values, local_size, MPI_FLOAT, 0, MPI_COMM_WORLD);
-  MPI_Barrier(MPI_COMM_WORLD);
-
   CALI_MARK_BEGIN(MPI_mergesort);
 
   //generate a binary tree with num_procs leaves
@@ -316,73 +227,6 @@ void parallelMergesort(int NUM_VALS, float *values, int num_procs)
       printf("The array is NOT sorted.\n");
     }
   }
-  CALI_MARK_END(sort_check_name);
-  
+  CALI_MARK_END(sort_check_name);  
 }
 
-int main(int argc, char* argv[]) 
-{
-    srand(time(NULL));
-    CALI_CXX_MARK_FUNCTION;
-
-    int NUM_VALS = atoi(argv[1]);
-
-    int rank, num_procs;
-    MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &num_procs);
-
-    {
-      // End execution if either:
-      // - num_procs is not a power of two
-      // - NUM_VALS is not divisble by num_procs
-      int a = num_procs;
-      while(a % 2 ==0) {
-        a = a / 2;
-      }
-
-      if(a == 1) {
-        //good
-      } else {
-        printf("Error: Number of processes isn't a power of two.\n");
-        printf("Values: %d", NUM_VALS);
-        printf("Procs: %d", num_procs);
-        return 1;
-      }
-
-      if(NUM_VALS % num_procs == 0) {
-        //good
-      } else {
-        printf("Error: Number of values isn't divisible by number of processes.\n");
-        printf("Values: %d", NUM_VALS);
-        printf("Procs: %d", num_procs);
-        return 1;
-      }
-    }
-
-    // Create caliper ConfigManager object
-    cali::ConfigManager mgr;
-    mgr.start();
-
-    // Initialize array to be sorted 
-    float *values = (float *)malloc(NUM_VALS * sizeof(float));
-
-    // Fill the local portions of the array then gather into values (NUM_VALS MUST BE DIVISIBLE BY num_procs)
-    parallel_array_fill(NUM_VALS, values, num_procs, rank);
-
-    
-    //messagePassingCheck(NUM_VALS, values, num_procs);
-    parallelMergesort(NUM_VALS, values, num_procs);
-
-
-    // Check if values is sorted
-
-    free(values);
-
-    // Flush Caliper output before finalizing MPI
-    mgr.stop();
-    mgr.flush();
-
-    MPI_Finalize();
-    return 0;
-}
