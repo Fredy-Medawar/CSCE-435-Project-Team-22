@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
     // Start Array Fill Event
     CALI_MARK_BEGIN(array_fill_name);
     srand(time(NULL));
-    unsigned long long seed = 10; // (unsigned long long)rand()
+    unsigned long long seed = (unsigned long long)rand();
     device_array_fill<<<BLOCKS, THREADS>>>(dev_values, NUM_VALS, seed, array_fill_type);
 
     // End Array Fill Event
@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
     {
         bitonic_sort(values, dev_values, NUM_VALS, THREADS, BLOCKS);
     } else if(sort_alg==1) {
-        // oddeven_sort(values, dev_values, NUM_VALS, THREADS, BLOCKS);
+        oddeven(values, dev_values, NUM_VALS, THREADS, BLOCKS);
     } else if(sort_alg==2) {
         selectionsort(values, dev_values, NUM_VALS, THREADS, BLOCKS);
     }
@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
     else if (sort_alg == 1) adiak::value("Algorithm", "oddeven_sort");
     else if (sort_alg == 2) adiak::value("Algorithm", "selection_sort");
 
-    array_print(values, NUM_VALS);
+    //array_print(values, NUM_VALS);
 
     // Flush Caliper output before finalizing MPI
     mgr.stop();
