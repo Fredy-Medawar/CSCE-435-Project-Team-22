@@ -58,17 +58,17 @@ __global__ void mergesortStep(float *values, int num_vals, int sectionWidth)
   imsort(values, left, right);
 }
 
-void mergesort(float *dev_values, int num_vals, int blocks)
+void mergesort(float *dev_values, int NUM_VALS, int THREADS, int BLOCKS)
 {
   int sliceWidth = 2;
   int threadsToUse = THREADS;
 
-  if(threadsToUse > num_vals / sliceWidth) { threadsToUse = num_vals/sliceWidth;}
+  if(threadsToUse > NUM_VALS / sliceWidth) { threadsToUse = NUM_VALS / sliceWidth;}
 
-  if(threadsToUse < num_vals / sliceWidth) {sliceWidth = num_vals / threadsToUse;}
+  if(threadsToUse < NUM_VALS / sliceWidth) { sliceWidth = NUM_VALS / threadsToUse;}
 
   for(;;) {
-    mergesortStep<<<blocks, threadsToUse>>>(dev_values, num_vals, sliceWidth);
+    mergesortStep<<<BLOCKS, threadsToUse>>>(dev_values, NUM_VALS, sliceWidth);
     if(threadsToUse == 1) { break; }
     sliceWidth *= 2;
     threadsToUse /= 2;
