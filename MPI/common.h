@@ -32,3 +32,4 @@ using namespace std;
 void sample_sort(int NUM_VALS, vector<float> *local_values, int local_size, int num_procs, int rank, int sample_size);
 void selection_sort(int NUM_VALS, vector<float> *local_values, int local_size, int num_procs, int rank);
 void oddeven_sort(int NUM_VALS, vector<float> *local_values, int local_size, int num_procs, int rank);
+void mergesort(int NUM_VALS, vector<float> *local_values, int local_size, int num_procs, int rank);
