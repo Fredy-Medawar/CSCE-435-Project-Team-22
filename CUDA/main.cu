@@ -125,6 +125,8 @@ int main(int argc, char *argv[])
         oddeven(values, dev_values, NUM_VALS, THREADS, BLOCKS);
     } else if(sort_alg==2) {
         selectionsort(values, dev_values, NUM_VALS, THREADS, BLOCKS);
+    } else if(sort_alg == 3) {
+        mergesort(dev_values, NUM_VALS, THREADS, BLOCKS);
     }
 
     CALI_MARK_BEGIN(sort_check_name);
