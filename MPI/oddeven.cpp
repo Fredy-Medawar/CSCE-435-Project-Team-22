@@ -14,7 +14,7 @@ void edgeR(vector<float>* local_values, int i, int num_procs, int rank) {
     (*local_values)[0] = newr;
 }
 
-void edgeL(vector<float>* local_values, int i, int num_procs, int rank) {
+int edgeL(vector<float>* local_values, int i, int num_procs, int rank) {
     // Receive local[rank+1][0] from rank+1
     // sort local[rank][-1]
     // send new local[rank+1][0] to rank+1
@@ -25,11 +25,14 @@ void edgeL(vector<float>* local_values, int i, int num_procs, int rank) {
     //printf("Waiting for r: i=%d, rank=%d, [0]=%.2f\n", i, rank, (*local_values)[0]);
     //printf("Received r=%.2f: i=%d, rank=%d, [0]=%.2f\n", r, i, rank, (*local_values)[0]);
     float newr=r;
+    int outOfOrder = 0;
     if(r<(*local_values)[local_n-1]) {
         newr = (*local_values)[local_n-1];
         (*local_values)[local_n-1] = r;
+        outOfOrder = 1;
     }
     MPI_Send(&newr, 1, MPI_FLOAT, rank+1, 0, MPI_COMM_WORLD);
+    return outOfOrder;
     //printf("Sent newr=%.2f: i=%d, rank=%d, [0]=%.2f\n", newr, i, rank, (*local_values)[0]);
 }
 
@@ -59,10 +62,12 @@ void oddeven_sort(int NUM_VALS, vector<float> *local_values, int local_size, int
     
     MPI_Barrier(MPI_COMM_WORLD);
     for(int i=0;i<NUM_VALS;i++) {
+        int isUnordered = 0;
         for(int j=i%2;j<local_values->size()-1;j+=2) {
             int l = j;
             int r = l + 1;
             if((*local_values)[l] > (*local_values)[r]) {
+                isUnordered = 1;
                 float tmp = (*local_values)[l];
                 (*local_values)[l] = (*local_values)[r];
                 (*local_values)[r] = tmp;
@@ -88,13 +93,24 @@ void oddeven_sort(int NUM_VALS, vector<float> *local_values, int local_size, int
             if(i%2==0) { // Even phase
                 
             } else { // Odd phase
-                if(rank%2==0 && rank<num_procs-1) { // Even rank
+                /*if(rank%2==0 && rank<num_procs-1) { // Even rank
                     edgeL(local_values, i, num_procs, rank);
                 } else if(rank%2==1 && rank>0){ // Odd rank
                     edgeR(local_values, i, num_procs, rank);
+                }*/
+                if(rank>0)
+                    edgeR(local_values, i, num_procs, rank);
+                if(rank<num_procs-1) {
+                    int adjUnordered = edgeL(local_values, i, num_procs, rank);
+                    if(isUnordered==0)
+                        isUnordered = adjUnordered;
                 }
             }
         }
+        int anyUnordered;
+        MPI_Allreduce(&isUnordered, &anyUnordered, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+        if(anyUnordered==0)
+            return;
         MPI_Barrier(MPI_COMM_WORLD);
     }
     MPI_Barrier(MPI_COMM_WORLD);
