@@ -2,6 +2,18 @@
 
 using namespace std;
 
+bool sort_check_c_style(float* local_values, int local_size)
+{
+    for (int i = 1; i < local_size; i++)
+    {
+        if (local_values[i - 1] > local_values[i]) 
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
 //merge two arrays so that if the two arrays were sorted, the returning array will be sorted
 void merge(float *values, int left, int mid, int right)
 {
@@ -126,20 +138,24 @@ node* searchForLeaf(node* n, int value) {
   return nullptr;
 }
 
-string stepUpTree(node* n, string ret) {
-  
-  ret += to_string(n->value);
+vector<int> stepUpTree(node* n, vector<int> v) {
+  v.push_back(n->value);
   if(n->parent == nullptr) { 
-    return ret; 
+    return v; 
   } else {
-    return stepUpTree(n->parent, ret);
+    return stepUpTree(n->parent, v);
   }
 
 }
 
 //mergesort(NUM_VALS, values, num_procs, rank);
-void mergesort(int NUM_VALS, float* local_values, int local_size, int num_procs, int rank)
+void mergesort(int NUM_VALS, vector<float> *flocal_values, float* local_arr, int local_size, int num_procs, int rank)
 { 
+  //convert vector<float>* to c-style arr
+  for(int i = 0; i < local_size; i++) {
+    local_arr[i] = (*flocal_values)[i];
+  }
+
   CALI_MARK_BEGIN(COMP);
   CALI_MARK_BEGIN(COMP_LARGE);
 
@@ -168,10 +184,10 @@ void mergesort(int NUM_VALS, float* local_values, int local_size, int num_procs,
   node* myLeaf = searchForLeaf(root, rank);
 
   //derive a list of destinations that this thread's data will go to
-  string destList = stepUpTree(myLeaf, "");
-  //printf("My rank is %d and my dest list is %s.\n", rank, destList.c_str());
+  vector<int> destList;
+  destList = stepUpTree(myLeaf, destList);
   
-  destList.erase(0,1);
+  destList.erase(destList.begin());
 
   int i = 1; 
   bool work = 1; //some processors pass through the loop and don't work
@@ -179,30 +195,31 @@ void mergesort(int NUM_VALS, float* local_values, int local_size, int num_procs,
   for(;;) {
     
     if(work) {
-      local_mergesort(local_values, 0, current_size-1);
+      local_mergesort(local_arr, 0, current_size-1);
   
       string thisDest = "";
-      thisDest += destList[0];
-      destList.erase(0,1);
-      int dest = stoi(thisDest);
+      int dest = destList[0];
+      destList.erase(destList.begin());
   
       if(dest == rank) {
         //we need to listen for a message from the other processor
         float* foreign_values = (float*)malloc(current_size * sizeof(float));
+        
+        printf("%d Receiving...\n", rank);
         MPI_Recv(foreign_values, current_size, MPI_FLOAT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        printf("%d Received.\n", rank);
 
         float* combined_values = new float[current_size * 2];
-        std::copy(local_values, local_values + current_size, combined_values);
+        std::copy(local_arr, local_arr + current_size, combined_values);
         std::copy(foreign_values, foreign_values + current_size, combined_values + current_size);
         merge(combined_values, 0, current_size-1, (current_size * 2)-1);
-
-        free(local_values);
+        free(local_arr);
         free(foreign_values);
-        local_values = combined_values;
+        local_arr = combined_values;
         
       } else {
         //send it to dest
-        MPI_Send(local_values, current_size, MPI_FLOAT, dest, 0, MPI_COMM_WORLD);
+        MPI_Send(local_arr, current_size, MPI_FLOAT, dest, 0, MPI_COMM_WORLD);
         work = 0; //this processor now rests
       }
     }
@@ -213,23 +230,23 @@ void mergesort(int NUM_VALS, float* local_values, int local_size, int num_procs,
 
     if(destList.size() == 0) {break;}
   }
+
   CALI_MARK_BEGIN(COMP_LARGE);
   CALI_MARK_BEGIN(COMP);
 
   CALI_MARK_BEGIN(SORT_CHECK_NAME);
   
-//  //process 0 now has the final result
-//  if(rank == 0) {
-//    for(int i = 0; i < NUM_VALS; i++) {
-//      printf("0: Value: %.6f\n", local_values[i]);
-//    }
-//    bool result = sort_check(local_values, NUM_VALS);
-//    if(result) {
-//      printf("The array is sorted.\n");
-//    } else {
-//      printf("The array is NOT sorted.\n");
-//    }
-//  }
+  if(rank == 0) {
+      for(int i = 0; i < NUM_VALS; i++) {
+          printf("0: Value: %.6f\n", local_arr[i]);
+      }
+      bool result = sort_check_c_style(local_arr, NUM_VALS);
+      if(result) {
+          printf("The array is sorted.\n");
+      } else {
+          printf("The array is NOT sorted.\n");
+      }
+  }
 
   CALI_MARK_END(SORT_CHECK_NAME);  
 }
