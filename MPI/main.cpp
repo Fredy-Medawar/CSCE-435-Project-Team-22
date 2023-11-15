@@ -50,6 +50,7 @@ void parallel_array_fill(int NUM_VALS, vector<float> *local_values, int local_si
     CALI_MARK_END(ARRAY_FILL_NAME);
 }
 
+
 bool sort_check(vector<float> local_values, int local_size)
 {
     for (int i = 1; i < local_size; i++)
@@ -197,6 +198,7 @@ int main(int argc, char* argv[])
     // Initialize local arrays for each process
     int local_size = NUM_VALS / num_procs;
     vector<float> local_values;
+    float* local_arr; //for mergesort
 
     // Fill the local portions of the values then gather into values (NUM_VALS MUST BE DIVISIBLE BY num_procs)
     parallel_array_fill(NUM_VALS, &local_values, local_size, num_procs, rank, array_fill_type);
@@ -217,12 +219,16 @@ int main(int argc, char* argv[])
         selection_sort(NUM_VALS, &local_values, local_size, num_procs, rank);
     } else if (sort_alg == 2) {
         oddeven_sort(NUM_VALS, &local_values, local_size, num_procs, rank);
+    } else if (sort_alg == 3) {
+        local_arr = (float*)malloc(local_size*sizeof(float));
+        mergesort(NUM_VALS, &local_values, local_arr, local_size, num_procs, rank);
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
 
-    parallel_sort_check_unmerged(NUM_VALS, local_values, local_size, num_procs, rank);
-
+    if(sort_alg != 3) {
+        parallel_sort_check_unmerged(NUM_VALS, local_values, local_size, num_procs, rank);
+    }
     free(values);
 
     adiak::init(NULL);
@@ -247,6 +253,7 @@ int main(int argc, char* argv[])
     if (sort_alg == 0) adiak::value("Algorithm", "SampleSort");
     else if (sort_alg == 1) adiak::value("Algorithm", "SelectionSort");
     else if (sort_alg == 2) adiak::value("Algorithm", "OddevenSort");
+    else if (sort_alg == 3) adiak::value("Algorithm", "Mergesort");
 
     mgr.stop();
     mgr.flush();
