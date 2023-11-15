@@ -48,12 +48,12 @@ void merge(float *values, int left, int mid, int right)
   }
 }
 
-void mergesort(float *values, int left, int right)
+void local_mergesort(float *values, int left, int right)
 {
   if(left < right) {
     int mid = left + (right - left)/2;
-    mergesort(values, left, mid);
-    mergesort(values, mid + 1, right);
+    local_mergesort(values, left, mid);
+    local_mergesort(values, mid + 1, right);
     merge(values, left, mid, right);
   }
 }
@@ -140,7 +140,8 @@ string stepUpTree(node* n, string ret) {
 //mergesort(NUM_VALS, values, num_procs, rank);
 void mergesort(int NUM_VALS, float* local_values, int local_size, int num_procs, int rank)
 { 
-  CALI_MARK_BEGIN(MPI_mergesort);
+  CALI_MARK_BEGIN(COMP);
+  CALI_MARK_BEGIN(COMP_LARGE);
 
   //generate a binary tree with num_procs leaves
   //it's height is equal to log_2(num_procs)
@@ -178,7 +179,7 @@ void mergesort(int NUM_VALS, float* local_values, int local_size, int num_procs,
   for(;;) {
     
     if(work) {
-      mergesort(local_values, 0, current_size-1);
+      local_mergesort(local_values, 0, current_size-1);
   
       string thisDest = "";
       thisDest += destList[0];
@@ -212,21 +213,24 @@ void mergesort(int NUM_VALS, float* local_values, int local_size, int num_procs,
 
     if(destList.size() == 0) {break;}
   }
-  CALI_MARK_END(MPI_mergesort);
+  CALI_MARK_BEGIN(COMP_LARGE);
+  CALI_MARK_BEGIN(COMP);
 
-  CALI_MARK_BEGIN(sort_check_name);
-  //process 0 now has the final result
-  if(rank == 0) {
-    for(int i = 0; i < NUM_VALS; i++) {
-      printf("0: Value: %.6f\n", local_values[i]);
-    }
-    bool result = sort_check(local_values, NUM_VALS);
-    if(result) {
-      printf("The array is sorted.\n");
-    } else {
-      printf("The array is NOT sorted.\n");
-    }
-  }
-  CALI_MARK_END(sort_check_name);  
+  CALI_MARK_BEGIN(SORT_CHECK_NAME);
+  
+//  //process 0 now has the final result
+//  if(rank == 0) {
+//    for(int i = 0; i < NUM_VALS; i++) {
+//      printf("0: Value: %.6f\n", local_values[i]);
+//    }
+//    bool result = sort_check(local_values, NUM_VALS);
+//    if(result) {
+//      printf("The array is sorted.\n");
+//    } else {
+//      printf("The array is NOT sorted.\n");
+//    }
+//  }
+
+  CALI_MARK_END(SORT_CHECK_NAME);  
 }
 
