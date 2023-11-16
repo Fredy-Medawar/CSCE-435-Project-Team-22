@@ -436,3 +436,26 @@ Performance of different implementations of different sorting algorithms in MPI 
 ## 3. _due 11/08_ Evaluation plan - what and how will you measure and compare
 We will evaluate the performance in terms of variable problem size and number of threads for the CUDA algorithms. We will evaluate the performance by Weak Scaling for the MPI algorithms.
 
+## 4. Performance evaluation
+### Sample sort
+#### Communication
+Sample sort communication scaled very poorly which is expected based on how the alorithm works, especially for the non sorted input types. This is because Sample sort sends about a total of num_procs^2 messages, with each process sending a buffer to all the other ranks. This causes the communication to take increasingly longer as more processors are added. However, for the sorted and 1% perturbed input, the increase in communication time was less drastic and didn't increase as much with more processors. This is because sample sort would send significantly less values between process when the values are sorted, as the buckets would already correspond to the values stored by each process. This applies to both the large and small communication sections.
+
+  ![](images/sample_comm_random.png) ![](images/sample_comm_sorted.png) ![](images/sample_comm_perturbed.png) ![](images/sample_comm_reverse.png)
+
+#### Computation
+Sample sort computation had scaled decently with more processes, as with more processes each process would have to sequentially sort less values. However, this scaling started to deteriorate with more processes, as the algorithm can not always ensure an even distribution of values to each process with a random input. For the sorted and 1% perturbed inputs, the computations times were much faster overall (although with similar scaling) since the distribution of values is much more uniform.
+
+  ![](images/sample_comp_random.png) ![](images/sample_comp_sorted.png) ![](images/sample_comp_perturbed.png) ![](images/sample_comp_reverse.png)
+
+## 4. Performance evaluation
+### Bitonic sort
+#### Communication
+The bitonic sort communication times were not affected by number of threads, which makes sense since CUDA memory copy operations do not depend on threads. However the communication times did increase with the array size, since more data is being transferred.   
+
+![](images/bitonic_comm_random.png) ![](images/bitonic_comm_sorted.png) ![](images/bitonic_comm_perturbed.png) ![](images/bitonic_comm_reverse.png)
+
+#### Computation
+Bitonic sort computation scaled well with increasing the number of threads, as the algorithm is able to scale without requring additional communication like an MPI algorithm would. However, between 512 and 1024 threads, the speedup was much less significant. This can be attributed to having more threads per block, causing individual threads to have less memory for their comparing and swapping operations. The computation times were mostly unaffected by input type.  
+
+![](images/bitonic_comp_random.png) ![](images/bitonic_comp_sorted.png) ![](images/bitonic_comp_perturbed.png) ![](images/bitonic_comp_reverse.png)
