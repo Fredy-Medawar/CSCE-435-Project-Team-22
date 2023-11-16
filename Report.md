@@ -463,3 +463,6 @@ Bitonic sort computation scaled well with increasing the number of threads, as t
 
 The graph for total time for CUDA odd even sort indicates that there is a noticable speedup across different problem sizes, with a notable speedup from 256 to 512 threads. Not enough data was successfully collected for the MPI runs to make a conclusion.
 
+![](images/cuda_oddeven.png)
+![](images/mpi_oddeven.png)
+
