@@ -205,9 +205,7 @@ void mergesort(int NUM_VALS, vector<float> *flocal_values, float* local_arr, int
         //we need to listen for a message from the other processor
         float* foreign_values = (float*)malloc(current_size * sizeof(float));
         
-        //printf("%d Receiving...\n", rank);
         MPI_Recv(foreign_values, current_size, MPI_FLOAT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        //printf("%d Received.\n", rank);
 
         float* combined_values = new float[current_size * 2];
         std::copy(local_arr, local_arr + current_size, combined_values);
@@ -217,22 +215,26 @@ void mergesort(int NUM_VALS, vector<float> *flocal_values, float* local_arr, int
         free(foreign_values);
         local_arr = combined_values;
         
+        
       } else {
         //send it to dest
         MPI_Send(local_arr, current_size, MPI_FLOAT, dest, 0, MPI_COMM_WORLD);
         work = 0; //this processor now rests
       }
+    } else {
+      destList.erase(destList.begin());
     }
 
     current_size = current_size * 2;
 
     MPI_Barrier(MPI_COMM_WORLD);
-
+    
     if(destList.size() == 0) {break;}
   }
 
-  CALI_MARK_BEGIN(COMP_LARGE);
-  CALI_MARK_BEGIN(COMP);
+
+  CALI_MARK_END(COMP_LARGE);
+  CALI_MARK_END(COMP);
 
   CALI_MARK_BEGIN(SORT_CHECK_NAME);
   
@@ -242,9 +244,9 @@ void mergesort(int NUM_VALS, vector<float> *flocal_values, float* local_arr, int
 //      }
       bool result = sort_check_c_style(local_arr, NUM_VALS);
       if(result) {
-          printf("The array is sorted.\n");
+          //printf("The array is sorted Joseph.\n");
       } else {
-          printf("The array is NOT sorted.\n");
+          //printf("The array is sorted Joseph.\n");
       }
   }
 
