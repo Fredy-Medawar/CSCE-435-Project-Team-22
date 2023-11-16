@@ -458,3 +458,8 @@ The bitonic sort communication times were not affected by number of threads, whi
 Bitonic sort computation scaled well with increasing the number of threads, as the algorithm is able to scale without requring additional communication like an MPI algorithm would. However, between 512 and 1024 threads, the speedup was much less significant. This can be attributed to having more threads per block, causing individual threads to have less memory for their comparing and swapping operations. The computation times were mostly unaffected by input type.  
 
 ![](images/bitonic_comp_random.png) ![](images/bitonic_comp_sorted.png) ![](images/bitonic_comp_perturbed.png) ![](images/bitonic_comp_reverse.png)
+
+### Oddeven sort
+
+The graph for total time for CUDA odd even sort indicates that there is a noticable speedup across different problem sizes, with a notable speedup from 256 to 512 threads. Not enough data was successfully collected for the MPI runs to make a conclusion.
+
