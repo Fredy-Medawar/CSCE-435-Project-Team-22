@@ -174,7 +174,7 @@ void mergesort(int NUM_VALS, vector<float> *flocal_values, float* local_arr, int
 
   //check tree
   if(rank == 0) {
-    printTree("", root, false);
+    //printTree("", root, false);
   }
 
   MPI_Barrier(MPI_COMM_WORLD);
@@ -205,9 +205,9 @@ void mergesort(int NUM_VALS, vector<float> *flocal_values, float* local_arr, int
         //we need to listen for a message from the other processor
         float* foreign_values = (float*)malloc(current_size * sizeof(float));
         
-        printf("%d Receiving...\n", rank);
+        //printf("%d Receiving...\n", rank);
         MPI_Recv(foreign_values, current_size, MPI_FLOAT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        printf("%d Received.\n", rank);
+        //printf("%d Received.\n", rank);
 
         float* combined_values = new float[current_size * 2];
         std::copy(local_arr, local_arr + current_size, combined_values);
@@ -237,9 +237,9 @@ void mergesort(int NUM_VALS, vector<float> *flocal_values, float* local_arr, int
   CALI_MARK_BEGIN(SORT_CHECK_NAME);
   
   if(rank == 0) {
-      for(int i = 0; i < NUM_VALS; i++) {
-          printf("0: Value: %.6f\n", local_arr[i]);
-      }
+//      for(int i = 0; i < NUM_VALS; i++) {
+//          printf("0: Value: %.6f\n", local_arr[i]);
+//      }
       bool result = sort_check_c_style(local_arr, NUM_VALS);
       if(result) {
           printf("The array is sorted.\n");
