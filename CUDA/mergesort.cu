@@ -60,6 +60,8 @@ __global__ void mergesortStep(float *values, int num_vals, int sectionWidth)
 
 void mergesort(float *dev_values, int NUM_VALS, int THREADS, int BLOCKS)
 {
+  CALI_MARK_BEGIN(COMP);
+  CALI_MARK_BEGIN(COMP_LARGE);
   int sliceWidth = 2;
   int threadsToUse = THREADS;
 
@@ -73,4 +75,6 @@ void mergesort(float *dev_values, int NUM_VALS, int THREADS, int BLOCKS)
     sliceWidth *= 2;
     threadsToUse /= 2;
   }
+  CALI_MARK_END(COMP_LARGE);
+  CALI_MARK_END(COMP);
 }
