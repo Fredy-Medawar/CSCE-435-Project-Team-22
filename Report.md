@@ -448,7 +448,6 @@ Sample sort computation had scaled decently with more processes, as with more pr
 
   ![](images/sample_comp_random.png) ![](images/sample_comp_sorted.png) ![](images/sample_comp_perturbed.png) ![](images/sample_comp_reverse.png)
 
-## 4. Performance evaluation
 ### Bitonic sort
 #### Communication
 The bitonic sort communication times were not affected by number of threads, which makes sense since CUDA memory copy operations do not depend on threads. However the communication times did increase with the array size, since more data is being transferred.   
