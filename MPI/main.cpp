@@ -224,12 +224,11 @@ int main(int argc, char* argv[])
         mergesort(NUM_VALS, &local_values, local_arr, local_size, num_procs, rank);
     }
 
-    MPI_Barrier(MPI_COMM_WORLD);
-
     if(sort_alg != 3) {
-        parallel_sort_check_unmerged(NUM_VALS, local_values, local_size, num_procs, rank);
+      MPI_Barrier(MPI_COMM_WORLD);
+      parallel_sort_check_unmerged(NUM_VALS, local_values, local_size, num_procs, rank);
+      free(values);
     }
-    free(values);
 
     adiak::init(NULL);
     adiak::user();
@@ -237,6 +236,8 @@ int main(int argc, char* argv[])
     adiak::libraries();
     adiak::cmdline();
     adiak::clustername();
+
+
 
     adiak::value("ProgrammingModel", "MPI"); // e.g., "MPI", "CUDA", "MPIwithCUDA"
     adiak::value("Datatype", "float"); // The datatype of input elements (e.g., double, int, float)
@@ -257,7 +258,7 @@ int main(int argc, char* argv[])
 
     mgr.stop();
     mgr.flush();
-
+    
     MPI_Finalize();
     return 0;
 }
