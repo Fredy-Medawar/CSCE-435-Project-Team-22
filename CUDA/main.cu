@@ -171,6 +171,7 @@ int main(int argc, char *argv[])
     adiak::value("ProgrammingModel", "CUDA"); // e.g., "MPI", "CUDA", "MPIwithCUDA"
     adiak::value("Datatype", "float"); // The datatype of input elements (e.g., double, int, float)
     adiak::value("SizeOfDatatype", sizeof(float)); // sizeof(datatype) of input elements in bytes (e.g., 1, 2, 4)
+    adiak::value("InputSize", NUM_VALS); // Size of input
     adiak::value("num_threads", THREADS); // The number of CUDA or OpenMP threads
     adiak::value("num_blocks", BLOCKS); // The number of CUDA blocks 
     adiak::value("group_num", 22); // The number of your group (integer, e.g., 1, 10)
@@ -184,6 +185,7 @@ int main(int argc, char *argv[])
     if (sort_alg == 0) adiak::value("Algorithm", "bitonic_sort");
     else if (sort_alg == 1) adiak::value("Algorithm", "oddeven_sort");
     else if (sort_alg == 2) adiak::value("Algorithm", "selection_sort");
+    else if (sort_alg == 3) adiak::value("Algorithm", "mergesort");
 
     //array_print(values, NUM_VALS);
 
