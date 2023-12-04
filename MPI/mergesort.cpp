@@ -138,15 +138,32 @@ node* searchForLeaf(node* n, int value) {
   return nullptr;
 }
 
-vector<int> stepUpTree(node* n, vector<int> v) {
+vector<int> stepUpTree(node* n, vector<int> v, vector<int>& s, int rank) {
   v.push_back(n->value);
+  node* sibling;
   if(n->parent == nullptr) { 
+    if(rank == 0) {
+      printf("size:%d\n", s.size());
+      printf("Finishing\n");
+    }
     return v; 
   } else {
-    return stepUpTree(n->parent, v);
+    if(n->parent->left == n) {
+      s.push_back(n->parent->right->value);
+      if(rank == 0) {
+        printf("Pushing back\n");
+      }
+    } else {
+      s.push_back(n->parent->left->value);
+      if(rank == 0) {
+        printf("Pushing back\n");
+      }
+    }
+    return stepUpTree(n->parent, v, s, rank);
   }
-
 }
+
+//return a list of the nodes which will send data to this node
 
 //mergesort(NUM_VALS, values, num_procs, rank);
 void mergesort(int NUM_VALS, vector<float> *flocal_values, float* local_arr, int local_size, int num_procs, int rank)
@@ -174,7 +191,7 @@ void mergesort(int NUM_VALS, vector<float> *flocal_values, float* local_arr, int
 
   //check tree
   if(rank == 0) {
-    //printTree("", root, false);
+    printTree("", root, false);
   }
 
   MPI_Barrier(MPI_COMM_WORLD);
@@ -185,9 +202,20 @@ void mergesort(int NUM_VALS, vector<float> *flocal_values, float* local_arr, int
 
   //derive a list of destinations that this thread's data will go to
   vector<int> destList;
-  destList = stepUpTree(myLeaf, destList);
-  
+  vector<int> srcList;
+  destList = stepUpTree(myLeaf, destList, srcList, rank);
   destList.erase(destList.begin());
+  if(rank == 1) {
+    printf("destlist for rank %d\n", rank);
+    for(int x : destList) {
+      printf("%d\n", x);
+    }
+    printf("srclist for rank %d has size %d.\n", rank, srcList.size());
+    for(int x : srcList) {
+      printf("%d\n", x);
+    }
+    printf("Thats all the data.\n");
+  }
 
   int i = 1; 
   bool work = 1; //some processors pass through the loop and don't work
@@ -199,13 +227,15 @@ void mergesort(int NUM_VALS, vector<float> *flocal_values, float* local_arr, int
   
       string thisDest = "";
       int dest = destList[0];
+      int src = srcList[0];
       destList.erase(destList.begin());
+      srcList.erase(srcList.begin());
   
       if(dest == rank) {
         //we need to listen for a message from the other processor
         float* foreign_values = (float*)malloc(current_size * sizeof(float));
         
-        MPI_Recv(foreign_values, current_size, MPI_FLOAT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(foreign_values, current_size, MPI_FLOAT, src, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
         float* combined_values = new float[current_size * 2];
         std::copy(local_arr, local_arr + current_size, combined_values);
@@ -227,11 +257,12 @@ void mergesort(int NUM_VALS, vector<float> *flocal_values, float* local_arr, int
 
     current_size = current_size * 2;
 
-    MPI_Barrier(MPI_COMM_WORLD);
+    //MPI_Barrier(MPI_COMM_WORLD);
     
     if(destList.size() == 0) {break;}
   }
 
+  MPI_Barrier(MPI_COMM_WORLD);
 
   CALI_MARK_END(COMP_LARGE);
   CALI_MARK_END(COMP);
@@ -246,7 +277,7 @@ void mergesort(int NUM_VALS, vector<float> *flocal_values, float* local_arr, int
       if(result) {
           //printf("The array is sorted Joseph.\n");
       } else {
-          //printf("The array is sorted Joseph.\n");
+          //printf("The array is not sorted Joseph.\n");
       }
   }
 
