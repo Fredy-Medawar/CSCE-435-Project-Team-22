@@ -25,4 +25,4 @@ void bitonic_sort(float *values, float* dev_values, int NUM_VALS, int THREADS, i
 void quicksort(float *values, float* dev_values, int NUM_VALS, int THREADS, int BLOCKS);
 void selectionsort(float *values, float* dev_values, int NUM_VALS, int THREADS, int BLOCKS);
 void oddeven(float *values, float* dev_values, int NUM_VALS, int THREADS, int BLOCKS);
-void mergesort(float *dev_values, int NUM_VALS, int THREADS, int BLOCKS);
+void merge_sort(float *dev_values, int NUM_VALS, int THREADS, int BLOCKS);
