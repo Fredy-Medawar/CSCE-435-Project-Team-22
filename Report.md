@@ -494,7 +494,8 @@ further increasing threads till 2^10 threads with diminishing returns. With stro
 
 ####CUDA
 
-![](images/mergesort/cuda_weak.jpg) ![](images/mergesort/cuda_strong.jpg)
+![](images/mergesort/cuda_weak.jpg) 
+![](images/mergesort/cuda_strong.jpg)
 ![](images/mergesort/cuda_speedup.jpg)
 
 (analysis here)
