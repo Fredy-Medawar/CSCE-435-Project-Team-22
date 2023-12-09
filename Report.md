@@ -495,3 +495,8 @@ further increasing threads till 2^10 threads with diminishing returns. With stro
 ![](images/mpi_image_1.png)
 
 From looking at the MPI algorithms together, sample sort preformed the best at larger processor counts, and saw better scaling as the number of processors increased. Mergesort started out faster than sample sort but didn't scale as well causing it to end slow at a high processor count. Finally, oddeven sort took too long to complete on the smaller processor counts, and didn't perform as well as the other sorts when it was able to complete.
+
+#### CUDA
+![](images/mergesort/cuda_comparison.jpg)
+
+Oddeven sort is fast, but scales worse than Bitonic sort. Mergesort scales slightly better than Oddeven, but in general, it isn't nearly fast enough to compete with either Oddeven or Bitonic. 
