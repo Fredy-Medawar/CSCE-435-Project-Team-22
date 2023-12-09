@@ -437,27 +437,40 @@ Performance of different implementations of different sorting algorithms in MPI 
 We will evaluate the performance in terms of variable problem size and number of threads for the CUDA algorithms. We will evaluate the performance by Weak Scaling for the MPI algorithms.
 
 ## 4. Performance evaluation
-### Sample sort
-#### Communication
-Sample sort communication scaled very poorly which is expected based on how the alorithm works, especially for the non sorted input types. This is because Sample sort sends about a total of num_procs^2 messages, with each process sending a buffer to all the other ranks. This causes the communication to take increasingly longer as more processors are added. However, for the sorted and 1% perturbed input, the increase in communication time was less drastic and didn't increase as much with more processors. This is because sample sort would send significantly less values between process when the values are sorted, as the buckets would already correspond to the values stored by each process. This applies to both the large and small communication sections.
+### MPI Sample Sort
+#### Strong Scaling
+![](images/sample_image_1.png) ![](images/sample_image_2.png) ![](images/sample_image_3.png) ![](images/sample_image_4.png) ![](images/sample_image_5.png) ![](images/sample_image_6.png) ![](images/sample_image_7.png) ![](images/sample_image_8.png) ![](images/sample_image_9.png) ![](images/sample_image_10.png) ![](images/sample_image_11.png) ![](images/sample_image_12.png) ![](images/sample_image_13.png) ![](images/sample_image_14.png) ![](images/sample_image_15.png) ![](images/sample_image_16.png) ![](images/sample_image_17.png) ![](images/sample_image_18.png) ![](images/sample_image_19.png) ![](images/sample_image_20.png) ![](images/sample_image_21.png)
 
-  ![](images/sample_comm_random.png) ![](images/sample_comm_sorted.png) ![](images/sample_comm_perturbed.png) ![](images/sample_comm_reverse.png)
+### Speedup Strong Scaling
+![](images/sample_image_22.png) ![](images/sample_image_23.png) ![](images/sample_image_24.png) ![](images/sample_image_25.png) ![](images/sample_image_26.png) ![](images/sample_image_27.png) ![](images/sample_image_28.png) ![](images/sample_image_29.png) ![](images/sample_image_30.png) ![](images/sample_image_31.png) ![](images/sample_image_32.png) ![](images/sample_image_33.png)
+
+### Weak Scaling
+![](images/sample_image_34.png) ![](images/sample_image_35.png) ![](images/sample_image_36.png) ![](images/sample_image_37.png) ![](images/sample_image_38.png) ![](images/sample_image_39.png) ![](images/sample_image_40.png) ![](images/sample_image_41.png) ![](images/sample_image_42.png) ![](images/sample_image_43.png) ![](images/sample_image_44.png) ![](images/sample_image_45.png)
+
+#### Communication
+Sample sort communication scaled very poorly which is expected based on how the alorithm works, especially for the non sorted input types, causing a bottleneck for the overall performance of the algorithm. This is because Sample sort sends a total of nearly num_procs^2 messages, with each process sending a buffer of values to all the other ranks. This causes the communication to take increasingly longer as more processors are added. However, for the sorted and 1% perturbed input, the increase in communication time was less drastic and didn't increase as much with more processors. This is because sample sort would send significantly less values between process when the values are sorted, as the buckets would already correspond to the values stored by each process. This applies to both the large and small communication sections. Additionally, the largest variation of communication times occured past 2^5 processess, as these jobs all used more than one node, and the position of the nodes in the tree had a significant influence on performance time. On the largest array size (2^28) with 1024 processors using 32 nodes, a considerable speedup in communication occured, likely the result of a close distribution of nodes. This means that with the ability to choose specific nodes, a much better scaling trend would appear. 
 
 #### Computation
-Sample sort computation had scaled decently with more processes, as with more processes each process would have to sequentially sort less values. However, this scaling started to deteriorate with more processes, as the algorithm can not always ensure an even distribution of values to each process with a random input. For the sorted and 1% perturbed inputs, the computations times were much faster overall (although with similar scaling) since the distribution of values is much more uniform.
+Sample sort computation scaled very well, especially with the larger problem sizes, and saw improvements in runtime up to 1024 processes for array sizes 2^20 and larger. It makes sense that the smaller problem sizes saw a falloff in computation improvements, as it is more likely for a process to receive a disproportionate number of values to sort on a much smaller array. However, the speedup was very consistent with the larger input sizes and took advantage of all the additional parallelization to the highest processor count. For the sorted and 1% perturbed inputs, the computations times were much faster overall (although with similar scaling) since the distribution of values is more likely to be uniform.
 
-  ![](images/sample_comp_random.png) ![](images/sample_comp_sorted.png) ![](images/sample_comp_perturbed.png) ![](images/sample_comp_reverse.png)
+#### Overall
+While sample sort did see considerable improvements in runtime with additional processors in terms of its computation sections, the communication sections of the algorithm were a significant bottleneck for its overall scaling and performance. In instances where the distribution of nodes was more favorable, the algorithm had much better results, but the scaling was overall inconsitent in some instances due its dependance on this factor.
 
-### Bitonic sort
+### CUDA Bitonic sort
+#### Strong Scaling
+![](images/bitonic_image_1.png) ![](images/bitonic_image_2.png) ![](images/bitonic_image_3.png) ![](images/bitonic_image_4.png) ![](images/bitonic_image_5.png) ![](images/bitonic_image_6.png) ![](images/bitonic_image_7.png) ![](images/bitonic_image_8.png) ![](images/bitonic_image_9.png) ![](images/bitonic_image_10.png) ![](images/bitonic_image_11.png) ![](images/bitonic_image_12.png) ![](images/bitonic_image_13.png) ![](images/bitonic_image_14.png) ![](images/bitonic_image_15.png) ![](images/bitonic_image_16.png) ![](images/bitonic_image_17.png) ![](images/bitonic_image_18.png) ![](images/bitonic_image_19.png) ![](images/bitonic_image_20.png) ![](images/bitonic_image_21.png)
+
+### Speedup Strong Scaling
+![](images/bitonic_image_22.png) ![](images/bitonic_image_23.png) ![](images/bitonic_image_24.png) ![](images/bitonic_image_25.png) ![](images/bitonic_image_26.png) ![](images/bitonic_image_27.png) ![](images/bitonic_image_28.png) ![](images/bitonic_image_29.png) ![](images/bitonic_image_30.png) ![](images/bitonic_image_31.png) ![](images/bitonic_image_32.png) ![](images/bitonic_image_33.png)
+
+### Weak Scaling
+![](images/bitonic_image_34.png) ![](images/bitonic_image_35.png) ![](images/bitonic_image_36.png) ![](images/bitonic_image_37.png) ![](images/bitonic_image_38.png) ![](images/bitonic_image_39.png) ![](images/bitonic_image_40.png) ![](images/bitonic_image_41.png) ![](images/bitonic_image_42.png) ![](images/bitonic_image_43.png) ![](images/bitonic_image_44.png) ![](images/bitonic_image_45.png)
+
 #### Communication
-The bitonic sort communication times were not affected by number of threads, which makes sense since CUDA memory copy operations do not depend on threads. However the communication times did increase with the array size, since more data is being transferred.   
-
-![](images/bitonic_comm_random.png) ![](images/bitonic_comm_sorted.png) ![](images/bitonic_comm_perturbed.png) ![](images/bitonic_comm_reverse.png)
+The bitonic sort communication times were not affected by number of threads, which makes sense since CUDA memory copy operations do not depend on threads. However the communication times did increase with the array size, since more data is being transferred between the device and host.
 
 #### Computation
 Bitonic sort computation scaled well with increasing the number of threads, as the algorithm is able to scale without requring additional communication like an MPI algorithm would. However, between 512 and 1024 threads, the speedup was much less significant. This can be attributed to having more threads per block, causing individual threads to have less memory for their comparing and swapping operations. The computation times were mostly unaffected by input type.  
-
-![](images/bitonic_comp_random.png) ![](images/bitonic_comp_sorted.png) ![](images/bitonic_comp_perturbed.png) ![](images/bitonic_comp_reverse.png)
 
 ### Oddeven sort
 
@@ -466,3 +479,8 @@ The graph for total time for CUDA odd even sort indicates that there is a notica
 ![](images/cuda_oddeven.png)
 ![](images/mpi_oddeven.png)
 
+### Grouped Plots
+#### MPI
+![](images/mpi_image_1.png)
+
+From looking at the MPI algorithms together, sample sort preformed the best at larger processor counts, and saw better scaling as the number of processors increased. Mergesort started out faster than sample sort but didn't scale as well causing it to end slow at a high processor count. Finally, oddeven sort took too long to complete on the smaller processor counts, and didn't perform as well as the other sorts when it was able to complete.
