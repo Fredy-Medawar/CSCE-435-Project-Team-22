@@ -490,6 +490,16 @@ With weak scaling communication, the runtimes are generally consistent with the 
 With weak scaling computation, there is a general decreasing trend as the number of threads increases. There is a steeper decrease from 2^6 to 2^8 threads showing the benefits of parallelization before a gradual decrease with 
 further increasing threads till 2^10 threads with diminishing returns. With strong scaling communication, the runtimes increase for increasing threads till 2^9 threads before falling significantly for all the input types except random. With strong scaling computation, I expected the types of input to minimally affect the runtimes because the selection sort has to traverse the entire local array larger than the current index before finding the minimum value. The sorted runtimes were slightly higher than the random runtimes. The runtimes dropped significantly from 2^8 to 2^9 threads with parallelization before tapering off for 2^10 threads.
 
+### Mergesort
+
+####CUDA
+![](images/mergesort/cuda_weak.jpg) ![](images/mergesort/cuda_strong.jpg)
+![](images/mergesort/cuda_speedup.jpg)
+
+(analysis here)
+
+#### MPI
+
 ### Grouped Plots
 #### MPI
 ![](images/mpi_image_1.png)
@@ -499,4 +509,4 @@ From looking at the MPI algorithms together, sample sort preformed the best at l
 #### CUDA
 ![](images/mergesort/cuda_comparison.jpg)
 
-Oddeven sort is fast, but scales worse than Bitonic sort. Mergesort scales slightly better than Oddeven, but in general, it isn't nearly fast enough to compete with either Oddeven or Bitonic. 
+Oddeven sort is fast, but scales worse than Bitonic sort. Mergesort scales slightly better than Oddeven, but in general, it isn't nearly fast enough to compete with either Oddeven or Bitonic. Since Bitonic sort is both generally fast and scales very well, it is the fastest algorithm for highly parallelized usage.
