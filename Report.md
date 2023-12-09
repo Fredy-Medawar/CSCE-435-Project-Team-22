@@ -479,6 +479,17 @@ The graph for total time for CUDA odd even sort indicates that there is a notica
 ![](images/cuda_oddeven.png)
 ![](images/mpi_oddeven.png)
 
+### Selection sort
+
+![](images/selection_cuda_weak_comp.png)
+![](images/selection_cuda_weak_comm.png)
+![](images/selection_cuda_strong_comp.png)
+![](images/selection_cuda_strong_comm.png)
+
+With weak scaling communication, the runtimes are generally consistent with the increasing number of threads for all the input sizes. The runtime gets tripled every time the input size is quadrupled.
+With weak scaling computation, there is a general decreasing trend as the number of threads increases. There is a steeper decrease from 2^6 to 2^8 threads showing the benefits of parallelization before a gradual decrease with 
+further increasing threads till 2^10 threads with diminishing returns. With strong scaling communication, the runtimes increase for increasing threads till 2^9 threads before falling significantly for all the input types except random. With strong scaling computation, I expected the types of input to minimally affect the runtimes because the selection sort has to traverse the entire local array larger than the current index before finding the minimum value. The sorted runtimes were slightly higher than the random runtimes. The runtimes dropped significantly from 2^8 to 2^9 threads with parallelization before tapering off for 2^10 threads.
+
 ### Grouped Plots
 #### MPI
 ![](images/mpi_image_1.png)
