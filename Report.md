@@ -472,6 +472,8 @@ The bitonic sort communication times were not affected by number of threads, whi
 #### Computation
 Bitonic sort computation scaled well with increasing the number of threads, as the algorithm is able to scale without requring additional communication like an MPI algorithm would. However, between 512 and 1024 threads, the speedup was much less significant. This can be attributed to having more threads per block, causing individual threads to have less memory for their comparing and swapping operations. The computation times were mostly unaffected by input type.  
 
+
+
 ### MPI Oddeven sort
 ### Strong Scaling
 ![](images/oddeven/strong/mpi-comm-1048576.png) ![](images/oddeven/strong/mpi-comm-262144.png) ![](images/oddeven/strong/mpi-comm-4194304.png) ![](images/oddeven/strong/mpi-comm-65536.png) ![](images/oddeven/strong/mpi-comp-1048576.png) ![](images/oddeven/strong/mpi-comp-262144.png) ![](images/oddeven/strong/mpi-comp-4194304.png) ![](images/oddeven/strong/mpi-comp-65536.png) ![](images/oddeven/strong/mpi-comp_large-1048576.png) ![](images/oddeven/strong/mpi-comp_large-262144.png) ![](images/oddeven/strong/mpi-comp_large-65536.png) ![](images/oddeven/strong/mpi-correctness_check-1048576.png) ![](images/oddeven/strong/mpi-correctness_check-262144.png) ![](images/oddeven/strong/mpi-correctness_check-4194304.png) ![](images/oddeven/strong/mpi-correctness_check-65536.png) ![](images/oddeven/strong/mpi-data_init-1048576.png) ![](images/oddeven/strong/mpi-data_init-262144.png) ![](images/oddeven/strong/mpi-data_init-4194304.png) ![](images/oddeven/strong/mpi-data_init-65536.png) ![](images/oddeven/strong/mpi-MPI_Barrier-1048576.png) ![](images/oddeven/strong/mpi-MPI_Barrier-262144.png) ![](images/oddeven/strong/mpi-MPI_Barrier-4194304.png) ![](images/oddeven/strong/mpi-MPI_Barrier-65536.png) ![](images/oddeven/strong/mpi-MPI_Recv-1048576.png) ![](images/oddeven/strong/mpi-MPI_Recv-262144.png) ![](images/oddeven/strong/mpi-MPI_Recv-4194304.png) ![](images/oddeven/strong/mpi-MPI_Recv-65536.png) 
@@ -497,6 +499,7 @@ Odd even sort preforms overall poorly on the MPI implementation. This is likely 
 
 ### Discussion
 Odd Even sort seems to be a much better fit for the CUDA model than for MPI. Odd Even sort spends very little time on communication thanks to CUDA's shared memory model. One can observe from the charts that there is scalablity with the number of processors. The algorithm scales poorly with problem size, however. This is due to the fact that odd even sort is essentially a parallel bubble sort, and therefore each process's computation has a time complexity of O(N^2/P). 
+
 
 
 ### Selection sort
