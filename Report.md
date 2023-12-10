@@ -96,6 +96,7 @@ function parallelRadixSort(NUM_VALS, localArray, local_size, num_procs, rank, ga
         printRuntime(end_time - start_time)
         printSortedArray(localArray, NUM_VALS)
 
+
 ### Selection Sort (CUDA)
     selection_sort_step(dev_values, partitionBegin, partitionEnd)
     
@@ -461,6 +462,14 @@ Odd even sort preforms overall poorly on the MPI implementation. This is likely 
 ### Discussion
 Odd Even sort seems to be a much better fit for the CUDA model than for MPI. Odd Even sort spends very little time on communication thanks to CUDA's shared memory model. One can observe from the charts that there is scalablity with the number of processors. The algorithm scales poorly with problem size, however. This is due to the fact that odd even sort is essentially a parallel bubble sort, and therefore each process's computation has a time complexity of O(N^2/P). 
 
+### Radix Sort
+
+#### MPI
+
+Radix sort is a non-comparative sorting algorithm that works by distributing elements into buckets according to their digits. The findMaxValue functions iterates through the array to find the maximum value. It is used to determine the maximum value in the local array before starting the radix sort. The counting sort function is used as a subroutine in the radix sort. It sorts the array based on the specified digit 'exp'. The getComparable function converts array elements for sorting, and the getIndex function is used to get the index for counting. It iterates through each digit's place value (exp) and performs counting sort on the local array. After each iteration, it gathers and broadcasts the sorted subarrays among different processes using gatherAndBroadcast. The sorted data is copied back to the local array, and this process is repeated until all digits are considered. 
+
+While I began implementing MPI Selection Sort, the high runtime created memory issues when handling large amounts of data so I had to drop the idea and move to MPI Radix Sort. I implemented the above idea due to the runtime of O(d*(n+k)) where d is the number of digits in the maximum number, n is the number of elements in the array, and k is the range of digits (for base 10, k is 10). However, I did my best to run the implementation but could not generate CALI files and plots successfully despite repeated trying. I loved the learning process behind MPI to communicate between worker processes with the high overhead and parallelizing despite its high sequential nature.
+
 ### Selection sort
 
 Selection sort is a simple comparison-based algorithm that repeatedly selects the minimum element from the unsorted partition of the array and placing it at the beginning. Starting with a completely unsorted and no sorted partition arrays, the algorithm iterates through the unsorted part of array to find the minimum element and swapped with the first element of the unsorted subarray. The runtime without parallelization is O(n^2) where n is the number of elements in the array.
@@ -474,6 +483,8 @@ The CUDA implementation for selection sort displays significant benefits from pa
 ![](images/selection_cuda_strong_comp.png)
 ![](images/selection_cuda_strong_comm.png)
 
+Given I had limited time due to trying multiple implementations of selection sort and radix sort, the times were obtained directly from the CALI file and put into Excel to generate the graphs rather than using a Jupyter notebook to parse and generate plots.
+
 #### Communication
 With weak scaling communication, increasing the number of threads does not significantly affect the runtimes for all the input sizes. The runtimes gets tripled every time the input size is quadrupled (2^4).
 With strong scaling communication, the runtimes increase for increasing threads till 2^9 threads before falling significantly for all the input types except random. 
@@ -481,14 +492,6 @@ With strong scaling communication, the runtimes increase for increasing threads 
 #### Computation
 With weak scaling computation, there is a general decreasing trend as the number of threads increases. There is a steeper decrease from 2^6 to 2^8 threads showing the benefits of parallelization before a gradual decrease with 
 further increasing threads till 2^10 threads with diminishing returns. With strong scaling computation, I expected the types of input to minimally affect the runtimes because the selection sort has to traverse the entire local array larger than the current index before finding the minimum value. The sorted runtimes were slightly higher than the random runtimes. The runtimes dropped significantly from 2^8 to 2^9 threads with parallelization before tapering off for 2^10 threads.
-
-### Radix Sort
-
-#### MPI
-
-Radix sort is a non-comparative sorting algorithm that works by distributing elements into buckets according to their digits. The findMaxValue functions iterates through the array to find the maximum value. It is used to determine the maximum value in the local array before starting the radix sort. The counting sort function is used as a subroutine in the radix sort. It sorts the array based on the specified digit 'exp'. The getComparable function is used to convert array elements for sorting, and the getIndex function is used to get the index for counting. It iterates through each digit's place value (exp) and performs counting sort on the local array. After each iteration, it gathers and broadcasts the sorted subarrays among different processes using gatherAndBroadcast. The sorted data is copied back to the local array, and this process is repeated until all digits are considered. 
-
-While I began implementing MPI Selection Sort, the high runtime created memory issues when handling large amounts of data so I had to drop the idea and move to MPI Radix Sort. I implemented the above idea due to the runtime of O(d*(n+k)) where d is the number of digits in the maximum number, n is the number of elements in the array, and k is the range of digits (for base 10, k is 10). However, I did my best to run the implementation but could not generate CALI files and plots successfully despite repeated trying. I loved the learning process behind MPI to communicate between worker processes with the high overhead and parallelizing despite its high sequential nature.
 
 ### Mergesort
 
@@ -504,7 +507,7 @@ It's worth pointing out that the strong scaling graphs show a trend with the inp
 
 ![](images/mergesort/mpi_combined.jpg)
 
-I'm proud of my MPI implementation of Mergesort. It works by generating a binary tree with leaves for each process, then each process walks down the tree and obtains a list of the destinations of it's original data. Then each process begins execution of a loop where it sorts it's local data, and then either sends it to another process or receives a message from another process. When it receives foreign data, it will copy that data and it's local data into a new array, and set that new array as it's local data for the next step. By the end of it, the sorted array is in the local data of process 0. For this reason, it's physically impossible for mergesort to beat an algorithm which doesn't involve gathering the data at the end. Mergesort will always gather the data in one process. I wondered why my code got progressively slower with more processes, or, why the speedup graph slopes downwards. Initially, I thought it was because my code was calling "MPI_Barrier()" in every recursive step- to ensure that the processors advanced up the tree together, and that any time, a process would only have one message in it's mailbox. I adapted the code so that when initially traversing the tree, processes not only make a list of the destinations of the data, but also a list of the sources the process should expect a message from. With that information, it was possible to have processors receives messages by rank, and I removed the MPI_Barrier() call. This did not help. This only added the initial overhead. The reason why the speedup graph slopes downwards is because of the constant array copies. Because I designed my algorithm to be minimalistic in respect to the memory, arrays are constantly allocated and de-allocated, and there are 2n float copy instructions for a recursive step of subarray size n. Hence, sorting an array with one processor involves 0 float copy instructions, which is hard to beat with parallelism. I expect that this algorithm would have moderate speedup had I prioritized that, and made it so every processor allocates the full size of the array even if it uses a tiny fraction of it.
+I'm proud of my MPI implementation of Mergesort. It works by generating a binary tree with leaves for each process, then each process walks down the tree and obtains a list of the destinations of it's original data. Then each process begins execution of a loop where it sorts it's local data, and then either sends it to another process or receives a message from another process. When it receives foreign data, it will copy that data and it's local data into a new array, and set that new array as it's local data for the next step. By the end of it, the sorted array is in the local data of process 0. For this reason, it's physically impossible for mergesort to beat an algorithm which doesn't involve gathering the data at the end. Mergesort will always gather the data in one process. I wondered why my code got progressively slower with more processes, or, why the speedup graph slopes downwards. Initially, I thought it was because my code was calling "MPI_Barrier()" in every recursive step- to ensure that the processors advanced up the tree together, and that any time, a process would only have one message in it's mailbox. I adapted the code so that when initially traversing the tree, processes not only make a list of the destinations of the data, but also a list of the sources the process should expect a message from. With that information, it was possible to have processors receive messages by rank, and I removed the MPI_Barrier() call. This did not help. This only added the initial overhead. The reason why the speedup graph slopes downwards is because of the constant array copies. Because I designed my algorithm to be minimalistic with respect to the memory, arrays are constantly allocated and de-allocated, and there are 2n float copy instructions for a recursive step of subarray size n. Hence, sorting an array with one processor involves 0 float copy instructions, which is hard to beat with parallelism. I expect that this algorithm would have moderate speedup had I prioritized that, and made it so every processor allocates the full size of the array even if it uses a tiny fraction of it.
 
 There are advantages to this approach. Since the size of the array is constant on all processors, it could be possible to make use of some nodes with less memory and others with more. The speedup graphs for computation actually begin to trend upwards past 2^8 processors, though that speedup is still less than 1, my algorithm could see use in a computing system with many nodes which could be used for power but do not have as much memory as some of the others.
 
@@ -512,9 +515,11 @@ There are advantages to this approach. Since the size of the array is constant o
 #### MPI
 ![](images/mpi_image_1.png)
 
-From looking at the MPI algorithms together, sample sort preformed the best at larger processor counts, and saw better scaling as the number of processors increased. Mergesort started out faster than sample sort but didn't scale as well causing it to end slow at a high processor count. Finally, oddeven sort took too long to complete on the smaller processor counts, and didn't perform as well as the other sorts when it was able to complete.
+From looking at the MPI algorithms together, sample sort performed the best at larger processor counts, and saw better scaling as the number of processors increased. Mergesort started out faster than sample sort but didn't scale as well causing it to end slow at a high processor count. The runtimes for sample sort fall with increasing threads while merge sort stays constant from 2 to 2^6 processors before increasing till 2^9 threads due to communication overhead. Finally, the odd even sort took too long to complete on the smaller processor counts and didn't perform as well as the other sorts when it was able to complete.
 
 #### CUDA
 ![](images/mergesort/cuda_comparison.jpg)
 
-Oddeven sort is fast, but scales worse than Bitonic sort. Mergesort scales slightly better than Oddeven, but in general, it isn't nearly fast enough to compete with either Oddeven or Bitonic. Since Bitonic sort is both generally fast and scales very well, it is the fastest algorithm for highly parallelized usage.
+Overall, the CUDA odd even sort is fast but scales worse than the Bitonic sort. Mergesort scales slightly better than Oddeven, but in general, it isn't nearly fast enough to compete with either Oddeven or Bitonic. Since Bitonic sort is generally fast and scales very well, it is the fastest CUDA algorithm for highly parallelized usage. 
+
+In other words, bitonic sort is the only implemented sort where runtimes fall significantly from 2^6 to 2^8 threads before tapering off to a flat line for the larger number of threads. Other implemented algorithms have consistent runtimes despite increasing number of threads.
