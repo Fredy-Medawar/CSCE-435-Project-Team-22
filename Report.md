@@ -20,119 +20,81 @@ Performance of different implementations of different sorting algorithms in MPI 
 - Bitonic Sort (CUDA)
 - Odd even sort (CUDA, MPI)
 - Mergesort (CUDA, MPI)
-- Selection Sort (CUDA, MPI)
+- Selection Sort (CUDA)
+- Radix Sort (MPI)
 
 ## 2. Pseudocode
 
-### Selection Sort (MPI):
-    function smallest(a: array of float, b: int, c: int) -> float
-    Create a variable temp and set it to b
-    Iterate from x in range b + 1 to c - 1
-        If a[temp] is greater than a[x]
-            Update temp to x
-        End If
-    End Iterate
-    Create a variable z and set it to a[temp]
-    Swap a[temp] and a[b]
-    Return a[b]
-    End function
 
-    function selection_sort(NUM_VALS: int, local_values: array of float, local_size: int, num_procs: int, rank: int)
-        Allocate memory for selectionArrayA as an array of NUM_VALS floats
-        Initialize localIndex to 0
+### Radix Sort (MPI):
+// Function to find the maximum value in an array
+function findMaxValue(arr, n):
+    max = arr[0]
+    for i = 1 to n-1:
+        if arr[i] > max:
+            max = arr[i]
+    return max
+
+// Function to perform counting sort on a given array
+function countingSort(arr, n, exp, getComparable, getIndex):
+    // Assuming a constant RANGE for simplicity
+    RANGE = determineRange()
+    output = new Array of size n
+    count = new Array of size RANGE initialized with zeros
     
-        If rank is 0
-            Seed the random number generator with the current time plus rank
-            Print "This is the unsorted array: "
-            For i in range 0 to NUM_VALS - 1
-                Generate a random localIndex within the range local_size
-                Set selectionArrayA[i] to local_values[localIndex]
-            End For
-        End If
+    // Convert elements for sorting
+    tempArr = new Array of size n
+    for i = 0 to n-1:
+        tempArr[i] = getComparable(arr[i], exp)
+        count[getIndex(tempArr[i], exp, RANGE)]++
     
-        Initialize selected and gatheredArray to NULL
-        Initialize smallestValue to 0 and smallestInProcess to 0
+    // Update count to get actual positions in the output array
+    for i = 1 to RANGE-1:
+        count[i] += count[i - 1]
     
-        If rank is 0
-            Allocate memory for selected as an array of NUM_VALS floats
-            Allocate memory for gatheredArray as an array of NUM_VALS floats
-        End If
+    // Build the output array using counting sort
+    for i = n-1 down to 0:
+        output[count[getIndex(tempArr[i], exp, RANGE)] - 1] = arr[i]
+        count[getIndex(tempArr[i], exp, RANGE)]--
     
-        Allocate memory for selectionArrayB as an array of local_size floats
+    // Copy the sorted output back to the original array
+    for i = 0 to n-1:
+        arr[i] = output[i]
+
+    // Clean up temporary array
+    delete tempArr
+
+// Function to perform parallel radix sort
+function parallelRadixSort(NUM_VALS, localArray, local_size, num_procs, rank, gatherAndBroadcast, copyArray):
+    start_time = getCurrentTime()
     
-        Use MPI to scatter selectionArrayA to selectionArrayB
+    // Find the maximum value in the local array
+    max = findMaxValue(localArray.data(), local_size)
     
-        Set smallestInProcess to the result of smallest(selectionArrayB, 0, local_size)
+    // Create a buffer for receiving data
+    receiveBuffer = new Array of size NUM_VALS
     
-        Initialize smallestProcess to 0
-        Initialize startPoint to 0
-        Initialize isNull to 0
+    // Iterate through each digit's place value
+    for exp = 1 to (max / exp > 0) do:
+        // Perform counting sort on the local array
+        countingSort(localArray.data(), local_size, exp, getComparable, getIndex)
+        
+        // Gather and broadcast the sorted subarrays
+        gatherAndBroadcast(localArray.data(), receiveBuffer, NUM_VALS, local_size, rank, num_procs)
+        
+        // Copy the received data back to the local array
+        copyArray(receiveBuffer, localArray.data(), NUM_VALS)
     
-        For a in range 0 to NUM_VALS - 1
-            Set smallestProcess to 0
+    // Clean up the buffer
+    delete receiveBuffer
     
-            If rank is 0
-                If isNull is false
-                    Set smallestValue to smallestInProcess
-                Else
-                    Set smallestValue to 150
-                End If
-            End If
+    // Measure and print the total runtime
+    end_time = getCurrentTime()
     
-            For b in range 1 to num_procs - 1
-                If rank is 0
-                    Receive receive from process b using MPI
-                    If receive is not 150 and receive is less than smallestValue
-                        Set smallestValue to receive
-                        Set smallestProcess to b
-                    End If
-                ElseIf rank is b
-                    If isNull is false
-                        Send smallestInProcess to process 0 using MPI
-                    Else
-                        Set x to 69  # No useful data
-                        Send x to process 0 using MPI
-                    End If
-                End If
-            End For
-    
-            Broadcast smallestProcess using MPI
-            Use MPI Barrier
-    
-            If rank is 0
-                Set selected[a] to smallestValue
-            End If
-    
-            If rank is smallestProcess
-                Increment startPoint by 1
-                Set smallestInProcess to the result of smallest(selectionArrayB, startPoint, local_size)
-                If startPoint is greater than local_size - 1
-                    Set isNull to 1
-                End If
-            End For
-        End For
-    
-        Use MPI to gather selected into gatheredArray
-    
-        If rank is 0
-            Print "\nThis is the sorted array: "
-            For c in range 0 to NUM_VALS - 1
-                If c modulo num_procs is 0
-                    Print "\n"
-                Print gatheredArray[c]
-            End For
-            Print "\n\n"
-        End If
-    
-        Free memory for selectionArrayA and selectionArrayB
-    
-        If rank is 0
-            Free memory for selected and gatheredArray
-        End If
-    
-        Use MPI Barrier
-        Use MPI Finalize
-    End function
+    // Print the sorted array on the root process
+    if rank == 0 then:
+        printRuntime(end_time - start_time)
+        printSortedArray(localArray, NUM_VALS)
 
 ### Selection Sort (CUDA)
     selection_sort_step(dev_values, partitionBegin, partitionEnd)
@@ -180,7 +142,6 @@ Performance of different implementations of different sorting algorithms in MPI 
         Free device memory for partitionEnd and partitionBegin
     
     End Function
-
 
 
 
@@ -500,18 +461,34 @@ Odd even sort preforms overall poorly on the MPI implementation. This is likely 
 ### Discussion
 Odd Even sort seems to be a much better fit for the CUDA model than for MPI. Odd Even sort spends very little time on communication thanks to CUDA's shared memory model. One can observe from the charts that there is scalablity with the number of processors. The algorithm scales poorly with problem size, however. This is due to the fact that odd even sort is essentially a parallel bubble sort, and therefore each process's computation has a time complexity of O(N^2/P). 
 
-
-
 ### Selection sort
+
+Selection sort is a simple comparison-based algorithm that repeatedly selects the minimum element from the unsorted partition of the array and placing it at the beginning. Starting with a completely unsorted and no sorted partition arrays, the algorithm iterates through the unsorted part of array to find the minimum element and swapped with the first element of the unsorted subarray. The runtime without parallelization is O(n^2) where n is the number of elements in the array.
+
+#### CUDA
+
+The CUDA implementation for selection sort displays significant benefits from parallelization. The host function initiates the selection sort process by defining the dimensions of the CUDA grid and block, allocating memory and instantiating the partition indices, and setting the sorting step in parallel indicing all values in the original array by calling the CUDA kernel function. We successfully defined the selectioon_sort_step() CUDA Kernel function which performs one step of the selection sort algorithm on a partition of the array defined by the partition indices. Each thread in the block gets the start index of the assigned partition from the partitionBegin array and the end index to perform the selection sort as mentioned above. By sorting multiple partitions concurrently, the global minimum values across all partitions are determined collectively as the entire array is sorted.
 
 ![](images/selection_cuda_weak_comp.png)
 ![](images/selection_cuda_weak_comm.png)
 ![](images/selection_cuda_strong_comp.png)
 ![](images/selection_cuda_strong_comm.png)
 
-With weak scaling communication, the runtimes are generally consistent with the increasing number of threads for all the input sizes. The runtime gets tripled every time the input size is quadrupled.
+#### Communication
+With weak scaling communication, increasing the number of threads does not significantly affect the runtimes for all the input sizes. The runtimes gets tripled every time the input size is quadrupled (2^4).
+With strong scaling communication, the runtimes increase for increasing threads till 2^9 threads before falling significantly for all the input types except random. 
+
+#### Computation
 With weak scaling computation, there is a general decreasing trend as the number of threads increases. There is a steeper decrease from 2^6 to 2^8 threads showing the benefits of parallelization before a gradual decrease with 
-further increasing threads till 2^10 threads with diminishing returns. With strong scaling communication, the runtimes increase for increasing threads till 2^9 threads before falling significantly for all the input types except random. With strong scaling computation, I expected the types of input to minimally affect the runtimes because the selection sort has to traverse the entire local array larger than the current index before finding the minimum value. The sorted runtimes were slightly higher than the random runtimes. The runtimes dropped significantly from 2^8 to 2^9 threads with parallelization before tapering off for 2^10 threads.
+further increasing threads till 2^10 threads with diminishing returns. With strong scaling computation, I expected the types of input to minimally affect the runtimes because the selection sort has to traverse the entire local array larger than the current index before finding the minimum value. The sorted runtimes were slightly higher than the random runtimes. The runtimes dropped significantly from 2^8 to 2^9 threads with parallelization before tapering off for 2^10 threads.
+
+### Radix Sort
+
+#### MPI
+
+Radix sort is a non-comparative sorting algorithm that works by distributing elements into buckets according to their digits. The findMaxValue functions iterates through the array to find the maximum value. It is used to determine the maximum value in the local array before starting the radix sort. The counting sort function is used as a subroutine in the radix sort. It sorts the array based on the specified digit 'exp'. The getComparable function is used to convert array elements for sorting, and the getIndex function is used to get the index for counting. It iterates through each digit's place value (exp) and performs counting sort on the local array. After each iteration, it gathers and broadcasts the sorted subarrays among different processes using gatherAndBroadcast. The sorted data is copied back to the local array, and this process is repeated until all digits are considered. 
+
+While I began implementing MPI Selection Sort, the high runtime created memory issues when handling large amounts of data so I had to drop the idea and move to MPI Radix Sort. I implemented the above idea due to the runtime of O(d*(n+k)) where d is the number of digits in the maximum number, n is the number of elements in the array, and k is the range of digits (for base 10, k is 10). However, I did my best to run the implementation but could not generate CALI files and plots successfully despite repeated trying. I loved the learning process behind MPI to communicate between worker processes with the high overhead and parallelizing despite its high sequential nature.
 
 ### Mergesort
 
