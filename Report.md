@@ -492,7 +492,7 @@ further increasing threads till 2^10 threads with diminishing returns. With stro
 
 ### Mergesort
 
-####CUDA
+#### CUDA
 
 ![](images/mergesort/cuda_combined.jpg)
  
